@@ -783,7 +783,7 @@
   .pd-body { grid-template-columns: 190px 1fr; }
 }
 
-@media (max-width: 800px) {
+@media (max-width: 1000px) {
   .pd-body { grid-template-columns: 1fr; }
 
   .pd-tab-menu {
@@ -1235,5 +1235,302 @@
 @media (min-width: 601px) {
   .schedule-add-modal {
     max-width: 440px;
+  }
+}
+/* ══════════════════════════════════════════
+   RESOURCES TAB — append to projectDetail.css
+   Only classes that don't already exist:
+   resource cards, section switcher, lightbox
+══════════════════════════════════════════ */
+
+
+.res-kpi-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+@media (max-width: 600px) {
+  .res-kpi-row {
+    gap: 0.6rem;
+    margin-bottom: 1.25rem;
+  }
+}
+
+/* ── Section switcher ── */
+.res-switcher {
+  display: flex;
+  gap: 6px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  margin-bottom: 1.1rem;
+}
+.res-switcher::-webkit-scrollbar {
+  display: none;
+}
+.res-switcher-btn {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.res-switcher-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0.5rem 1rem;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 9px;
+  background: white;
+  color: #64748b;
+  font-size: 0.82rem;
+  font-weight: 600;
+  font-family: 'Inter', sans-serif;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.res-switcher-btn:hover:not(.active) {
+  border-color: #10b981;
+  color: #0b3d27;
+}
+
+.res-switcher-btn.active {
+  background: var(--rs-bg, #ecfdf5);
+  color: var(--rs-color, #065f46);
+}
+
+.res-switcher-count {
+  font-size: 0.68rem;
+  font-weight: 700;
+  background: rgba(0,0,0,0.06);
+  border-radius: 20px;
+  padding: 1px 7px;
+  line-height: 1.5;
+}
+
+.res-switcher-label-short { display: none; }
+
+/* ── Resource card grid ── */
+.res-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 1rem;
+}
+
+.res-card {
+  background: white;
+  border: 1px solid #e9eef3;
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: box-shadow 0.2s ease, transform 0.15s ease;
+}
+
+.res-card:hover {
+  box-shadow: 0 6px 18px rgba(0,0,0,0.07);
+  transform: translateY(-2px);
+}
+
+.res-card-photo {
+  width: 100%;
+  height: 130px;
+  overflow: hidden;
+  cursor: pointer;
+  background: #f8fafc;
+  flex-shrink: 0;
+}
+
+.res-card-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.25s ease;
+  display: block;
+}
+
+.res-card-photo:hover img { transform: scale(1.06); }
+
+.res-card-photo-empty {
+  width: 100%;
+  height: 130px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+  color: #cbd5e1;
+  flex-shrink: 0;
+}
+
+.res-card-body {
+  padding: 0.85rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  flex: 1;
+}
+
+.res-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.res-card-name {
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #0b3d27;
+  line-height: 1.3;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  word-break: break-word;
+}
+
+.res-card-note {
+  font-size: 0.78rem;
+  color: #64748b;
+  line-height: 1.45;
+  margin: 0;
+}
+
+/* Cost row (Plants, Materials & Equipment) */
+.res-card-cost {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0.5rem;
+  padding-top: 0.55rem;
+  border-top: 1px solid #f1f5f9;
+}
+
+.res-card-cost > div { min-width: 0; }
+
+.res-cost-label {
+  font-size: 0.67rem;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 3px;
+}
+
+.res-cost-value {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #1e293b;
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
+.res-cost-amount { color: #0b3d27; }
+
+/* Footer (status + remarks) */
+.res-card-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding-top: 0.55rem;
+  border-top: 1px solid #f1f5f9;
+}
+
+/* Status badge that's also a button to cycle */
+.res-status-btn {
+  border: none;
+  cursor: pointer;
+  gap: 5px;
+  transition: filter 0.15s ease;
+}
+
+.res-status-btn:hover { filter: brightness(0.94); }
+
+/* ── Lightbox ── */
+.res-lightbox-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.92);
+  z-index: 4000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.res-lightbox-img {
+  max-width: 100%;
+  max-height: 90vh;
+  border-radius: 8px;
+  object-fit: contain;
+}
+
+.res-lightbox-close {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  width: 36px;
+  height: 36px;
+  background: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.25);
+  border-radius: 50%;
+  color: white;
+  font-size: 1.2rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 4001;
+}
+
+/* ── Mobile ── */
+@media (max-width: 768px) {
+  .res-switcher { gap: 5px; }
+  .res-switcher-btn { font-size: 0.78rem; padding: 0.45rem 0.85rem; }
+}
+
+@media (max-width: 600px) {
+  .res-grid { grid-template-columns: 1fr 1fr; gap: 0.7rem; }
+  .res-card-photo, .res-card-photo-empty { height: 100px; }
+  .res-card-body { padding: 0.65rem 0.75rem; gap: 0.5rem; }
+  .res-card-name { font-size: 0.82rem; }
+
+  /* Stack cost stats vertically — guarantees no overflow regardless of value length */
+  .res-card-cost {
+    grid-template-columns: 1fr;
+    gap: 0.35rem;
+  }
+  .res-card-cost > div {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .res-cost-label { margin-bottom: 0; }
+  .res-cost-value { font-size: 0.8rem; text-align: right; }
+
+  .res-card-foot { flex-wrap: wrap; }
+}
+
+@media (max-width: 420px) {
+  .res-grid { grid-template-columns: 1fr; }
+  .res-card-photo, .res-card-photo-empty { height: 150px; }
+}
+
+.input-field[list]::-webkit-calendar-picker-indicator {
+  display: none !important;
+}
+.input-field[list]::-webkit-list-button {
+  display: none !important;
+}
+
+@media (max-width: 1024px) and (min-width: 601px) {
+  .res-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
   }
 }

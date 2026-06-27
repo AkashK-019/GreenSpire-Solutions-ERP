@@ -461,7 +461,7 @@
 .pj-modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(11, 28, 20, 0.5);
+  background: #0b1c1480;
   backdrop-filter: blur(2px);
   -webkit-backdrop-filter: blur(2px);
   z-index: 2000;
@@ -618,6 +618,7 @@
 
 /* ── Calculator modal — floats above project modal ── */
 .pj-modal-overlay.pj-calc-overlay {
+  background: none;
   z-index: 2100;
 }
 

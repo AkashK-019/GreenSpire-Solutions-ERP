@@ -6,6 +6,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Login        from './pages/Login';
 import Dashboard    from './pages/Dashboard';
 import Projects     from './pages/Projects';
+import Quotations   from './pages/Quotations';
 import ProjectDetail from './pages/ProjectDetail';
 import Finance      from './pages/Finance';
 import Inventory    from './pages/Inventory';
@@ -25,6 +26,7 @@ export default function App() {
           {/* All protected routes — single admin has full access */}
           <Route path="/"              element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path="/projects"      element={<ProtectedRoute><Projects /></ProtectedRoute>} />
+          <Route path="/quotations"    element={<ProtectedRoute><Quotations /></ProtectedRoute>} />
           <Route path="/projects/:id"  element={<ProtectedRoute><ProjectDetail /></ProtectedRoute>} />
           <Route path="/finance"       element={<ProtectedRoute><Finance /></ProtectedRoute>} />
           <Route path="/inventory"     element={<ProtectedRoute><Inventory /></ProtectedRoute>} />

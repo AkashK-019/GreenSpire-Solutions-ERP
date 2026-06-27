@@ -88,7 +88,6 @@ export default function TabExecutionScope({ project }) {
       <div className="tab-page-head">
         <div>
           <h2 className="tab-page-title">Execution Scope</h2>
-          <p className="tab-page-sub">Build a custom checklist of deliverables for this project. Saved to the cloud — synced across all devices.</p>
         </div>
       </div>
 

@@ -4,34 +4,24 @@ import { useAuth } from '../context/AuthContext';
 import {
   LayoutDashboard, Briefcase, Settings, LogOut,
   UserCheck, DollarSign, Leaf, Users, BarChart3,
-  Plus, FileText, FilePlus, UserPlus, Sprout, ClipboardList, ChevronRight
+  ChevronRight, FileText
 } from 'lucide-react';
 
 const NAV_ITEMS = [
   { path: '/',              label: 'Dashboard',     icon: LayoutDashboard },
   { path: '/projects',      label: 'Projects',      icon: Briefcase },
+  { path: '/quotations',    label: 'Quotations',    icon: FileText },
   { path: '/finance',       label: 'Finance',       icon: DollarSign },
   { path: '/inventory',     label: 'Inventory',     icon: Leaf },
-  { path: '/labour',        label: 'Labour',        icon: Users },
+  { path: '/labour',        label: 'Team',          icon: Users },    
   { path: '/reports',       label: 'Reports',       icon: BarChart3 },  
-  { path: '/client-portal', label: 'Client Portal', icon: UserCheck },
   { path: '/settings',      label: 'Settings',      icon: Settings },
-];
-
-const QUICK_ACTIONS = [
-  { label: 'New Project',       icon: Plus,          path: '/projects' },
-  { label: 'Add Quotation',     icon: FileText,      path: '/projects' },
-  { label: 'Add Invoice',       icon: FilePlus,      path: '/projects' },
-  { label: 'Labour Entry',      icon: UserPlus,      path: '/labour' },
-  { label: 'Plant Purchase',    icon: Sprout,        path: '/inventory' },
-  { label: 'Daily Site Report', icon: ClipboardList, path: '/projects' },
 ];
 
 export default function Sidebar() {
   const { profile, signOut } = useAuth();
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
-  const [actionsOpen, setActionsOpen] = useState(false);
 
   useEffect(() => {
     const handleToggle = () => setIsOpen(prev => !prev);
@@ -54,7 +44,6 @@ export default function Sidebar() {
   return (
     <>
       <aside className={`gs-sidebar ${isOpen ? 'open' : ''}`}>
-
         {/* ── Brand ── */}
         <div className="gs-brand">
           <div className="gs-logo-ring">
@@ -78,11 +67,8 @@ export default function Sidebar() {
 
         {/* ── Scrollable body ── */}
         <div className="gs-scroll">
-
-          {/* Nav label */}
           <p className="gs-section-label">Main Menu</p>
 
-          {/* Navigation */}
           <nav className="gs-nav">
             {NAV_ITEMS.map(({ path, label, icon: Icon }) => (
               <NavLink
@@ -98,33 +84,6 @@ export default function Sidebar() {
               </NavLink>
             ))}
           </nav>
-
-          {/* Quick Actions accordion */}
-          <div className="gs-qa-wrap">
-            <button
-              className="gs-qa-toggle"
-              onClick={() => setActionsOpen(p => !p)}
-              aria-expanded={actionsOpen}
-            >
-              <span className="gs-section-label" style={{ margin: 0 }}>Quick Actions</span>
-              <ChevronRight size={12} className={`gs-qa-chevron ${actionsOpen ? 'open' : ''}`} />
-            </button>
-
-            {actionsOpen && (
-              <div className="gs-qa-list">
-                {QUICK_ACTIONS.map(({ label, icon: Icon, path }) => (
-                  <button
-                    key={label}
-                    className="gs-qa-btn"
-                    onClick={() => { closeMobile(); navigate(path); }}
-                  >
-                    <Icon size={13} />
-                    <span>{label}</span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
         </div>
 
         {/* ── Footer ── */}
@@ -142,7 +101,6 @@ export default function Sidebar() {
         </div>
       </aside>
 
-      {/* Mobile backdrop */}
       <div
         className={`sidebar-backdrop ${isOpen ? 'open' : ''}`}
         onClick={() => setIsOpen(false)}

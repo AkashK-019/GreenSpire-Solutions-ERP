@@ -567,6 +567,7 @@ export default function Projects() {
                     <label>Start Date</label>
                     <input
                       type="date"
+                      lang="en-GB"
                       value={form.start_date}
                       onChange={e => setForm({ ...form, start_date: e.target.value })}
                       className="input-field"
@@ -577,6 +578,7 @@ export default function Projects() {
                     <label>Estimated Completion</label>
                     <input
                       type="date"
+                      lang="en-GB"
                       value={form.completion_date}
                       min={form.start_date}
                       onChange={e => setForm({ ...form, completion_date: e.target.value })}

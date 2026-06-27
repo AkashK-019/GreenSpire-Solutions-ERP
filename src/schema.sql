@@ -150,18 +150,26 @@ create table documents (
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
--- 10. QUOTATIONS
+-- 10. QUOTATIONS (standalone — converted to project on approval)
 create table quotations (
   id uuid default uuid_generate_v4() primary key,
-  project_id uuid references projects on delete cascade,
+  project_id uuid references projects on delete cascade,  -- NULL until converted
   quotation_number text not null unique,
+  quotation_date date default current_date,
   client_name text not null,
+  client_email text,
+  client_phone text,
+  project_type text default 'Residential',
+  site_address text,
+  scope_of_work text,
   amount numeric not null,
   gst_percent numeric default 18,
   gst_amount numeric,
   total_amount numeric,
-  scope_of_work text,
-  status text default 'Pending', -- Pending, Approved, Rejected, Converted
+  validity_days integer default 30,
+  notes text,
+  status text default 'Pending', -- Pending, Approved, Rejected
+  converted_project_id uuid references projects(id) on delete set null,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 

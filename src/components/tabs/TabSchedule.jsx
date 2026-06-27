@@ -140,7 +140,6 @@ export default function TabSchedule({ project }) {
       <div className="tab-page-head">
         <div>
           <h2 className="tab-page-title">Schedule</h2>
-          <p className="tab-page-sub">Track project stages on a Kanban board.</p>
         </div>
         <button className="pj-add-btn" onClick={() => setShowAddModal(true)}>
           <Plus size={15} /> Add Stage

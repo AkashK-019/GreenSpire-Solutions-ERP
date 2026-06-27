@@ -6,7 +6,7 @@ import {
   ChevronLeft, Loader2,
   LayoutDashboard, ClipboardList, Compass, Users,
   Calendar, MapPin, Files, FileSignature, Handshake,
-  Receipt, Sprout, Package, Coins, Edit2, X, Check
+  Receipt, Boxes, Coins, Edit2, X, Check
 } from 'lucide-react';
 import { supabase } from '../supabase';
 
@@ -20,8 +20,7 @@ import TabDocuments       from '../components/tabs/TabDocuments';
 import TabQuotations      from '../components/tabs/TabQuotations';
 import TabContracts       from '../components/tabs/TabContracts';
 import TabInvoices        from '../components/tabs/TabInvoices';
-import TabPlantationBOQ   from '../components/tabs/TabPlantationBOQ';
-import TabMaterialSelection from '../components/tabs/TabMaterialSelection';
+import TabResources       from '../components/tabs/TabResources';
 import TabFinance         from '../components/tabs/TabFinance';
 
 import '../styles/projectDetail.css';
@@ -38,8 +37,7 @@ const TABS = [
   { name: 'Contracts',           icon: Handshake,       component: TabContracts,          category: 'Billing & Commercials' },
   { name: 'Invoices',            icon: Receipt,         component: TabInvoices,           category: 'Billing & Commercials' },
   { name: 'Documents',           icon: Files,           component: TabDocuments,          category: 'Billing & Commercials' },
-  { name: 'Plantation BOQ',      icon: Sprout,          component: TabPlantationBOQ,      category: 'Resources & Ledger' },
-  { name: 'Material Selection',  icon: Package,         component: TabMaterialSelection,  category: 'Resources & Ledger' },
+  { name: 'Resources',           icon: Boxes,           component: TabResources,          category: 'Resources & Ledger' },
   { name: 'Team',                icon: Users,           component: TabTeam,               category: 'Resources & Ledger' },
   { name: 'Finance',             icon: Coins,           component: TabFinance,            category: 'Resources & Ledger' },
 ];

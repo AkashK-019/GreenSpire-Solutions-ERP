@@ -1,256 +1,463 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
-import { Package, Plus, Search, AlertTriangle, TrendingDown, Leaf, Droplets, Shovel, Loader2 } from 'lucide-react';
+import {
+  Package, Plus, Search, Leaf,
+  Droplets, Shovel, Loader2, Edit2, Trash2,
+  Download, ChevronLeft, AlertTriangle, CheckCircle2,
+  FlaskConical, Layers
+} from 'lucide-react';
 import { supabase } from '../supabase';
 import '../index.css';
+import '../styles/Inventory.css';
 
-const CATEGORIES = ['All', 'Plants', 'Fertilizers', 'Irrigation', 'Tools', 'Aggregates', 'Others'];
+/* ─── constants ─── */
+const MAIN_TABS  = ['Plants', 'Materials'];
+const MAT_SUBTABS = ['All', 'Fertilizers', 'Irrigation', 'Tools', 'Aggregates', 'Others'];
 
-const CATEGORY_ICONS = {
-  Plants: <Leaf size={16} />,
-  Fertilizers: <Leaf size={16} />,
-  Irrigation: <Droplets size={16} />,
-  Tools: <Shovel size={16} />,
-  Aggregates: <Package size={16} />,
-  Others: <Package size={16} />
+const MAT_META = {
+  Fertilizers: { icon: <FlaskConical size={13}/>, desc:'NPK, organic, micronutrients' },
+  Irrigation:  { icon: <Droplets size={13}/>,     desc:'Drip pipes, emitters, fittings' },
+  Tools:       { icon: <Shovel size={13}/>,        desc:'Spades, pruners, equipment' },
+  Aggregates:  { icon: <Layers size={13}/>,        desc:'Soil, cocopeat, pebbles, sand' },
+  Others:      { icon: <Package size={13}/>,       desc:'Miscellaneous supplies' },
+};
+
+const ALL_ADD_CATS = ['Plants', 'Materials'];
+const EMPTY_FORM = { name:'', botanical_name:'', category:'Plants', unit:'', stock:'', min_stock:'', unit_cost:'', supplier:'' };
+
+const fmtDate = iso => iso ? new Date(iso).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}) : '—';
+const fmtINR  = n => '₹' + Number(n).toLocaleString('en-IN');
+const fmtVal  = n => {
+  const v = Number(n);
+  if (v === 0)      return '₹0';
+  if (v < 1000)     return '₹' + v.toLocaleString('en-IN');
+  if (v < 100000)   return '₹' + (v/1000).toFixed(v%1000===0?0:1).replace(/\.0$/,'') + 'K';
+  if (v < 10000000) return '₹' + (v/100000).toFixed(v%100000===0?0:1).replace(/\.0$/,'') + 'L';
+  return '₹' + (v/10000000).toFixed(1).replace(/\.0$/,'') + 'Cr';
 };
 
 export default function Inventory() {
-  const [loading, setLoading] = useState(true);
-  const [categoryFilter, setCategoryFilter] = useState('All');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [items, setItems] = useState([]);
+  const [loading, setLoading]     = useState(true);
+  const [items, setItems]         = useState([]);
+  const [mainTab, setMainTab]     = useState('Plants');
+  const [matSubTab, setMatSubTab] = useState('All');
+  const [search, setSearch]       = useState('');
+  const [showPicker, setShowPicker] = useState(false);
+  const [showForm, setShowForm]   = useState(false);
+  const [editItem, setEditItem]   = useState(null);
+  const [confirmDel, setConfirmDel] = useState(null);
+  const [form, setForm]           = useState(EMPTY_FORM);
+  const [saving, setSaving]       = useState(false);
 
-  const [form, setForm] = useState({ 
-    name: '', 
-    botanical_name: '',
-    category: 'Plants', 
-    unit: '', 
-    stock: '', 
-    min_stock: '', 
-    unit_cost: '', 
-    supplier: '' 
-  });
 
-  useEffect(() => {
-    fetchInventory();
-  }, []);
-
-  const fetchInventory = async () => {
+  /* ── fetch ── */
+  const fetchInventory = useCallback(async () => {
     setLoading(true);
     try {
-      const { data: plants, error: plantsError } = await supabase
-        .from('plants_inventory')
-        .select('*');
+      const [{ data: plants, error: pe }, { data: mats, error: me }] = await Promise.all([
+        supabase.from('plants_inventory').select('*'),
+        supabase.from('materials_inventory').select('*'),
+      ]);
+      if (pe) throw pe;
+      if (me) throw me;
 
-      if (plantsError) throw plantsError;
+      const norm = [
+        ...(plants || []).map(p => ({
+          id:`plant-${p.id}`, dbId:p.id, type:'plant',
+          name:p.name, sub:p.botanical_name||'',
+          category:'Plants', unit:p.size_height||'Nos',
+          stock:p.quantity_available||0,
+          min_stock:p.low_stock_threshold||0,
+          unit_cost:Number(p.purchase_rate)||0,
+          supplier:p.nursery_source||'N/A',
+          last_updated:fmtDate(p.created_at),
+        })),
+        ...(mats || []).map(m => {
+          let cat='Others';
+          const db=m.category||'';
+          if (db.includes('Fertilizer'))                                    cat='Fertilizers';
+          else if (db.includes('Irrigation')||db.includes('Drip'))         cat='Irrigation';
+          else if (db.includes('Tools')||db.includes('Garden'))            cat='Tools';
+          else if (db.includes('Pebbles')||db.includes('Soil')||
+                   db.includes('Cocopeat')||db.includes('Sand'))           cat='Aggregates';
+          return {
+            id:`material-${m.id}`, dbId:m.id, type:'material',
+            name:m.item_name, sub:'', category:cat, dbCategory:db,
+            unit:m.unit||'Nos',
+            stock:Number(m.quantity_available)||0,
+            min_stock:Number(m.low_stock_threshold)||0,
+            unit_cost:Number(m.purchase_rate)||0,
+            supplier: m.supplier || 'General Vendor',
+            last_updated:fmtDate(m.created_at),
+          };
+        }),
+      ];
+      setItems(norm);
+    } catch(err) {
+      alert('Failed to load inventory');
+    } finally { setLoading(false); }
+  }, []);
 
-      const { data: materials, error: mError } = await supabase
-        .from('materials_inventory')
-        .select('*');
+  useEffect(() => { fetchInventory(); }, [fetchInventory]);
 
-      if (mError) throw mError;
+/* ── Prevent background scroll when modal is open ── */
+useEffect(() => {
+  if (showForm || showPicker || confirmDel) {
+    document.body.style.overflow = 'hidden';
+  } else {
+    document.body.style.overflow = 'unset';
+  }
 
-      // Normalize plants entries
-      const plantsNormalized = (plants || []).map(p => ({
-        id: `plant-${p.id}`,
-        dbId: p.id,
-        type: 'plant',
-        name: p.name + (p.botanical_name ? ` (${p.botanical_name})` : ''),
-        rawName: p.name,
-        botanicalName: p.botanical_name || '',
-        category: 'Plants',
-        unit: p.size_height || 'Nos',
-        stock: p.quantity_available || 0,
-        min_stock: p.low_stock_threshold || 0,
-        unit_cost: Number(p.purchase_rate) || 0,
-        supplier: p.nursery_source || 'N/A',
-        last_updated: p.created_at ? new Date(p.created_at).toISOString().split('T')[0] : 'N/A'
-      }));
+  return () => {
+    document.body.style.overflow = 'unset';
+  };
+}, [showForm, showPicker, confirmDel]);
 
-      // Normalize materials entries
-      const materialsNormalized = (materials || []).map(m => {
-        let cat = 'Others';
-        const dbCat = m.category || '';
-        if (dbCat.includes('Fertilizer')) cat = 'Fertilizers';
-        else if (dbCat.includes('Irrigation') || dbCat.includes('Drip')) cat = 'Irrigation';
-        else if (dbCat.includes('Tools') || dbCat.includes('Garden')) cat = 'Tools';
-        else if (dbCat.includes('Pebbles') || dbCat.includes('Soil') || dbCat.includes('Cocopeat') || dbCat.includes('Sand')) cat = 'Aggregates';
+  /* ── derived ── */
+  const plants    = useMemo(() => items.filter(i => i.type === 'plant'), [items]);
+  const materials = useMemo(() => items.filter(i => i.type === 'material'), [items]);
 
-        return {
-          id: `material-${m.id}`,
-          dbId: m.id,
-          type: 'material',
-          name: m.item_name,
-          category: cat,
-          dbCategory: dbCat,
-          unit: m.unit || 'Nos',
-          stock: Number(m.quantity_available) || 0,
-          min_stock: Number(m.low_stock_threshold) || 0,
-          unit_cost: Number(m.purchase_rate) || 0,
-          supplier: 'General Vendor',
-          last_updated: m.created_at ? new Date(m.created_at).toISOString().split('T')[0] : 'N/A'
-        };
-      });
+  const matSubCounts = useMemo(() => {
+    const c = { All: materials.length };
+    MAT_SUBTABS.slice(1).forEach(k => { c[k] = materials.filter(i => i.category === k).length; });
+    return c;
+  }, [materials]);
 
-      setItems([...plantsNormalized, ...materialsNormalized]);
-    } catch (err) {
-      console.error('Error fetching inventory:', err);
-    } finally {
-      setLoading(false);
+  const activeItems = useMemo(() => {
+    let base = mainTab === 'Plants' ? plants : materials;
+    if (mainTab === 'Materials' && matSubTab !== 'All') {
+      base = base.filter(i => i.category === matSubTab);
     }
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      base = base.filter(i =>
+        i.name.toLowerCase().includes(q) ||
+        i.sub.toLowerCase().includes(q) ||
+        i.supplier.toLowerCase().includes(q)
+      );
+    }
+    return base;
+  }, [mainTab, matSubTab, plants, materials, search]);
+
+  const statsPlants = useMemo(() => ({
+    total: plants.length,
+    low:   plants.filter(i => i.stock < i.min_stock).length,
+    val:   plants.filter(i => i.stock >= i.min_stock).reduce((s,i) => s+i.stock*i.unit_cost, 0),
+  }), [plants]);
+
+  const statsMats = useMemo(() => ({
+    total: materials.length,
+    low:   materials.filter(i => i.stock < i.min_stock).length,
+    val:   materials.filter(i => i.stock >= i.min_stock).reduce((s,i) => s+i.stock*i.unit_cost, 0),
+  }), [materials]);
+
+  /* ── stock adjust ── */
+  const adjustStock = async (item, delta) => {
+    const val = Math.max(0, item.stock + delta);
+    const tbl = item.type === 'plant' ? 'plants_inventory' : 'materials_inventory';
+    const { error } = await supabase.from(tbl).update({ quantity_available: val }).eq('id', item.dbId);
+        if (error) { alert('Failed to update stock'); return; }
+    setItems(prev => prev.map(i => i.id === item.id ? { ...i, stock: val } : i));
   };
 
-  const handleAdd = async (e) => {
+  const openEdit = item => {
+    setForm({ name:item.name, botanical_name:item.sub||'', category:item.category, unit:item.unit,
+      stock:String(item.stock), min_stock:String(item.min_stock), unit_cost:String(item.unit_cost), supplier:item.supplier });
+    setEditItem(item);
+    setShowForm(true);
+  };
+
+  const pickCategory = cat => {
+    setForm({ ...EMPTY_FORM, category: cat });
+    setShowPicker(false);
+    setShowForm(true);
+  };
+
+  const closeAll = () => {
+    setShowPicker(false); setShowForm(false); setEditItem(null); setForm(EMPTY_FORM);
+  };
+
+    /* ── save ── */
+  const handleSave = async e => {
     e.preventDefault();
+    setSaving(true);
     try {
-      if (form.category === 'Plants') {
-        const { error } = await supabase
-          .from('plants_inventory')
-          .insert([{
-            name: form.name,
-            botanical_name: form.botanical_name || '',
-            category: 'Ornamental Plants', // default plants category
-            size_height: form.unit || 'Nos',
-            quantity_available: Number(form.stock) || 0,
-            low_stock_threshold: Number(form.min_stock) || 0,
-            nursery_source: form.supplier || 'General Nursery',
-            purchase_rate: Number(form.unit_cost) || 0
-          }]);
-
-        if (error) throw error;
-      } else {
-        // Map to DB category enum: Pots, Fertilizers, Drip Irrigation Material, Pebbles, Soil, Cocopeat, Garden Tools, Others
-        let dbCat = 'Others';
-        if (form.category === 'Fertilizers') dbCat = 'Fertilizers';
-        else if (form.category === 'Irrigation') dbCat = 'Drip Irrigation Material';
-        else if (form.category === 'Tools') dbCat = 'Garden Tools';
-        else if (form.category === 'Aggregates') dbCat = 'Pebbles';
-
-        const { error } = await supabase
-          .from('materials_inventory')
-          .insert([{
+      if (editItem) {
+        if (editItem.type === 'plant') {
+          const { error } = await supabase.from('plants_inventory').update({
+            name:form.name, botanical_name:form.botanical_name, size_height:form.unit,
+            quantity_available:Number(form.stock)||0, low_stock_threshold:Number(form.min_stock)||0,
+            purchase_rate:Number(form.unit_cost)||0, nursery_source:form.supplier,
+          }).eq('id', editItem.dbId);
+          if (error) throw error;
+        } else {
+          let dbCat='Others';
+          if(form.category==='Fertilizers')dbCat='Fertilizers';
+          else if(form.category==='Irrigation')dbCat='Drip Irrigation Material';
+          else if(form.category==='Tools')dbCat='Garden Tools';
+          else if(form.category==='Aggregates')dbCat='Pebbles';
+          const { error } = await supabase.from('materials_inventory').update({
             item_name: form.name,
             category: dbCat,
-            quantity_available: Number(form.stock) || 0,
-            unit: form.unit || 'Nos',
-            low_stock_threshold: Number(form.min_stock) || 0,
-            purchase_rate: Number(form.unit_cost) || 0
+            unit: form.unit,
+            quantity_available: Number(form.stock)||0,
+            low_stock_threshold: Number(form.min_stock)||0,
+            purchase_rate: Number(form.unit_cost)||0,
+            supplier: form.supplier || 'General Vendor',
+          }).eq('id', editItem.dbId);
+          if (error) throw error;
+        }
+        alert('Item updated');
+      } else {
+        if (form.category === 'Plants') {
+          const { error } = await supabase.from('plants_inventory').insert([{
+            name:form.name, botanical_name:form.botanical_name||'', category:'Ornamental Plants',
+            size_height:form.unit||'Nos', quantity_available:Number(form.stock)||0,
+            low_stock_threshold:Number(form.min_stock)||0, nursery_source:form.supplier||'General Nursery',
+            purchase_rate:Number(form.unit_cost)||0,
+            supplier: form.supplier || 'General Vendor',
           }]);
-
-        if (error) throw error;
+          if (error) throw error;
+        } else {
+          let dbCat='Others';
+          if(form.category==='Fertilizers')dbCat='Fertilizers';
+          else if(form.category==='Irrigation')dbCat='Drip Irrigation Material';
+          else if(form.category==='Tools')dbCat='Garden Tools';
+          else if(form.category==='Aggregates')dbCat='Pebbles';
+          const { error } = await supabase.from('materials_inventory').insert([{
+            item_name: form.name,
+            category: dbCat,
+            unit: form.unit||'Nos',
+            quantity_available: Number(form.stock)||0,
+            low_stock_threshold: Number(form.min_stock)||0,
+            purchase_rate: Number(form.unit_cost)||0,
+            supplier: form.supplier || 'General Vendor',
+          }]);
+          if (error) throw error;
+        }
+        alert('Item added');
       }
-
-      setShowAddModal(false);
-      setForm({ name: '', botanical_name: '', category: 'Plants', unit: '', stock: '', min_stock: '', unit_cost: '', supplier: '' });
+      closeAll();
       fetchInventory();
-    } catch (err) {
-      console.error('Error adding inventory item:', err);
-      alert(err.message || 'Failed to add item');
-    }
+    } catch(err) {
+      alert(err.message || 'Save failed');
+    } finally { setSaving(false); }
   };
 
-  const filtered = items.filter(i => {
-    const matchSearch = i.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-      i.supplier.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchCat = categoryFilter === 'All' || i.category === categoryFilter;
-    return matchSearch && matchCat;
-  });
+  /* ── delete ── */
+  const doDelete = async item => {
+    try {
+      const tbl = item.type==='plant' ? 'plants_inventory' : 'materials_inventory';
+      const { error } = await supabase.from(tbl).delete().eq('id', item.dbId);
+      if (error) throw error;
+      setItems(prev => prev.filter(i => i.id !== item.id));
+            alert('Item deleted');
+    } catch { alert('Delete failed'); }
+    finally { setConfirmDel(null); }
+  };
 
-  const lowStockItems = items.filter(i => i.stock < i.min_stock).length;
-  const totalValue = items.reduce((s, i) => s + (i.stock * i.unit_cost), 0);
+  /* ── export CSV ── */
+  const exportCSV = () => {
+    const rows = [
+      ['Name','Sub / Botanical','Category','Unit','Stock','Min Stock','Unit Cost','Total Value','Supplier','Status'],
+      ...activeItems.map(i => [
+        i.name, i.sub||'', i.category, i.unit, i.stock, i.min_stock,
+        i.unit_cost, i.stock*i.unit_cost, i.supplier,
+        i.stock < i.min_stock ? 'Low Stock' : 'In Stock',
+      ])
+    ];
+    const csv = rows.map(r => r.map(v => `"${v}"`).join(',')).join('\n');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([csv], { type:'text/csv' }));
+    a.download = 'inventory.csv';
+    a.click();
+  };
 
+  const barPct = item => item.min_stock > 0
+    ? Math.min(100, Math.round((item.stock / item.min_stock) * 100))
+    : 100;
+
+  const activeStats = mainTab === 'Plants' ? statsPlants : statsMats;
+
+  /* ════════════ RENDER ════════════ */
   return (
-    <div style={{ display: 'flex', minHeight: '100vh' }}>
-      <Sidebar />
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-        <Header title="Inventory" />
-        <main className="main-content animate-fade">
-          {/* Page Header */}
-          <div className="projects-header-bar" style={{ marginBottom: '1.5rem' }}>
+    <div className="inv-layout">
+      <Sidebar/>
+      <div className="inv-right">
+        <Header title="Inventory"/>
+
+        <main className="inv-main animate-fade">
+
+          {/* ── PAGE HEAD ── */}
+          <div className="inv-page-head">
             <div>
-              <h1 style={{ fontSize: '1.75rem', fontWeight: 800 }}>Inventory & Stock</h1>
-              <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Plants, fertilizers, irrigation supplies, tools, and aggregates.</p>
+              <h1 className="inv-page-title">Inventory</h1>
+              <p className="inv-page-sub">Manage stock levels, costs, and low-stock alerts.</p>
             </div>
-            <button className="btn-primary" onClick={() => setShowAddModal(true)}>
-              <Plus size={18} /> Add Item
-            </button>
           </div>
 
-          {/* Summary Cards */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
-            {[
-              { label: 'Total Items', val: items.length, icon: <Package size={20} />, color: '#6d28d9' },
-              { label: 'Low Stock Alerts', val: lowStockItems, icon: <AlertTriangle size={20} />, color: '#dc2626' },
-              { label: 'Total Stock Value', val: `₹${(totalValue / 100000).toFixed(1)}L`, icon: <TrendingDown size={20} />, color: '#0284c7' }
-            ].map(s => (
-              <div key={s.label} className="stat-card" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: `${s.color}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: s.color }}>{s.icon}</div>
-                <div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{s.label}</div>
-                  <div style={{ fontSize: '1.4rem', fontWeight: 800, color: s.color }}>{s.val}</div>
-                </div>
+          {/* ── TOOLBAR ──
+               View switcher (Plants / Materials) sits on the left,
+               page actions (Search / Export / Add Item) sit on the right.
+               Keeping them at opposite ends of the row — instead of stacked
+               directly on top of each other — is what stops the two groups
+               from reading as one cluttered button cluster. */}
+          <div className="inv-toolbar-row">
+            <div className="inv-main-tabs">
+              {MAIN_TABS.map(tab => {
+                const st = tab === 'Plants' ? statsPlants : statsMats;
+                return (
+                  <button
+                    key={tab}
+                    className={`inv-main-tab ${mainTab === tab ? 'active' : ''}`}
+                    onClick={() => { setMainTab(tab); setSearch(''); }}
+                  >
+                    <span className="imt-icon">
+                      {tab === 'Plants' ? <Leaf size={15}/> : <Package size={15}/>}
+                    </span>
+                    <span className="imt-label">{tab}</span>
+                    {st.low > 0 && (
+                      <span className="imt-alert"><AlertTriangle size={10}/> {st.low}</span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="inv-head-right">
+              <div className="inv-search-wrap">
+                <Search className="inv-search-icon" size={14}/>
+                <input className="inv-search-input" type="text"
+                  placeholder={`Search ${mainTab.toLowerCase()}…`}
+                  value={search} onChange={e => setSearch(e.target.value)}/>
               </div>
-            ))}
+              <button className="inv-export-btn" onClick={exportCSV}>
+                <Download size={14}/> Export
+              </button>
+              <button className="inv-add-btn" onClick={() => setShowPicker(true)}>
+                <Plus size={14}/> Add Item
+              </button>
+            </div>
           </div>
 
-          {/* Search + Filter */}
-          <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
-            <div style={{ position: 'relative', flex: 1, maxWidth: '360px' }}>
-              <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-              <input type="text" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Search item or supplier..." className="input-field" style={{ paddingLeft: '2.5rem' }} />
+          {/* ── STATS ROW ── */}
+          <div className="inv-stats-row">
+            <div className="inv-stat-card">
+              <div className="isc-label">Total Items</div>
+              <div className="isc-val">{activeStats.total}</div>
             </div>
-            <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
-              {CATEGORIES.map(cat => (
-                <button key={cat} onClick={() => setCategoryFilter(cat)} style={{ padding: '0.35rem 0.8rem', borderRadius: '20px', border: '1px solid var(--border)', backgroundColor: categoryFilter === cat ? 'var(--primary)' : 'white', color: categoryFilter === cat ? 'white' : 'var(--text)', fontSize: '0.82rem', fontWeight: 500, cursor: 'pointer' }}>{cat}</button>
+            <div className="inv-stat-card">
+              <div className="isc-label">Low Stock</div>
+              <div className={`isc-val ${activeStats.low > 0 ? 'isc-red' : 'isc-green'}`}>
+                {activeStats.low}
+              </div>
+            </div>
+            <div className="inv-stat-card">
+              <div className="isc-label">In-Stock Value</div>
+              <div className="isc-val isc-green">{fmtVal(activeStats.val)}</div>
+            </div>
+          </div>
+
+          {/* ── MATERIAL SUB-TABS (only when Materials is active) ── */}
+          {mainTab === 'Materials' && (
+            <div className="inv-sub-tabs">
+              {MAT_SUBTABS.map(sub => (
+                <button
+                  key={sub}
+                  className={`inv-sub-tab ${matSubTab === sub ? 'active' : ''}`}
+                  onClick={() => setMatSubTab(sub)}
+                >
+                  {sub === 'All' ? 'All Materials' : sub}
+                  <span className="ist-pill">{matSubCounts[sub] || 0}</span>
+                </button>
               ))}
             </div>
-          </div>
+          )}
 
-          {/* Table */}
-          <div style={{ background: 'white', borderRadius: '14px', border: '1px solid var(--border)', overflow: 'hidden' }}>
+          {/* ── TABLE CARD ── */}
+          <div className="inv-table-card">
             {loading ? (
-              <div style={{ display: 'flex', justifyContent: 'center', padding: '3rem' }}>
-                <Loader2 className="db-spin" size={32} />
+              <div className="inv-loading"><Loader2 className="db-spin" size={22}/> Loading…</div>
+            ) : activeItems.length === 0 ? (
+              <div className="inv-empty">
+                {mainTab === 'Plants' ? <Leaf size={34} style={{opacity:0.15}}/> : <Package size={34} style={{opacity:0.15}}/>}
+                <p>{search ? `No results for "${search}"` : `No ${mainTab.toLowerCase()} added yet`}</p>
+                <button className="inv-empty-add" onClick={() => setShowPicker(true)}>
+                  <Plus size={13}/> Add {mainTab === 'Plants' ? 'a plant' : 'a material'}
+                </button>
               </div>
             ) : (
-              <div className="table-responsive">
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
+              <div className="inv-table-scroll">
+                <table className="inv-table">
                   <thead>
-                    <tr style={{ backgroundColor: '#f8fafc' }}>
-                      {['Item Name', 'Category', 'Unit/Size', 'In Stock', 'Min Stock', 'Unit Cost', 'Total Value', 'Supplier', 'Status', 'Last Updated'].map(h => (
-                        <th key={h} style={{ padding: '0.875rem 1rem', textAlign: 'left', fontWeight: 600, color: 'var(--text-muted)', whiteSpace: 'nowrap', borderBottom: '1px solid var(--border)' }}>{h}</th>
-                      ))}
+                    <tr>
+                      <th>Item</th>
+                      {mainTab === 'Materials' && <th>Category</th>}
+                      <th>Unit</th>
+                      <th>Stock</th>
+                      <th>Unit Cost</th>
+                      <th>Total Value</th>
+                      <th>Supplier</th>
+                      <th>Status</th>
+                      <th style={{textAlign:'right'}}>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {filtered.map((item, idx) => {
+                    {activeItems.map(item => {
                       const isLow = item.stock < item.min_stock;
+                      const pct   = barPct(item);
+                      const barC  = isLow ? 'var(--c-red)' : 'var(--c-green)';
                       return (
-                        <tr key={item.id} style={{ borderBottom: '1px solid #f1f5f9', background: isLow ? '#fff5f5' : idx % 2 === 0 ? 'white' : '#fafbfc' }}>
-                          <td style={{ padding: '0.875rem 1rem', fontWeight: 600, color: 'var(--text)' }}>
-                            {isLow && <AlertTriangle size={13} style={{ color: '#dc2626', marginRight: '0.3rem', verticalAlign: 'middle' }} />}
-                            {item.name}
+                        <tr key={item.id} className={isLow ? 'row-low' : ''}>
+                          <td>
+                            <div className="inv-item-cell">
+                              {isLow && <span className="inv-low-dot"/>}
+                              <div>
+                                <div className="inv-item-name">{item.name}</div>
+                                {item.sub && <div className="inv-item-sub">{item.sub}</div>}
+                              </div>
+                            </div>
                           </td>
-                          <td style={{ padding: '0.875rem 1rem' }}>
-                            <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', color: 'var(--primary)' }}>
-                              {CATEGORY_ICONS[item.category] || <Package size={14} />} {item.category}
-                            </span>
+                          {mainTab === 'Materials' && (
+                            <td>
+                              <span className="inv-cat-tag">{item.category}</span>
+                            </td>
+                          )}
+                          <td className="td-muted">{item.unit}</td>
+                          <td>
+                            <div className="inv-stk-wrap">
+                              <div className="inv-stk-ctrl">
+                                <button className="inv-stk-btn" onClick={() => adjustStock(item,-1)}>−</button>
+                                <span className={`inv-stk-num ${isLow ? 'stk-low' : 'stk-ok'}`}>
+                                  {item.stock.toLocaleString('en-IN')}
+                                </span>
+                                <button className="inv-stk-btn" onClick={() => adjustStock(item,+1)}>+</button>
+                              </div>
+                              <div className="inv-mini-track">
+                                <div className="inv-mini-fill" style={{width:`${pct}%`,background:barC}}/>
+                              </div>
+                              <div className="inv-mini-lbl">min {item.min_stock}</div>
+                            </div>
                           </td>
-                          <td style={{ padding: '0.875rem 1rem', color: 'var(--text-muted)' }}>{item.unit}</td>
-                          <td style={{ padding: '0.875rem 1rem', fontWeight: 700, color: isLow ? '#dc2626' : '#10b981' }}>{item.stock}</td>
-                          <td style={{ padding: '0.875rem 1rem', color: 'var(--text-muted)' }}>{item.min_stock}</td>
-                          <td style={{ padding: '0.875rem 1rem' }}>₹{item.unit_cost.toLocaleString()}</td>
-                          <td style={{ padding: '0.875rem 1rem', fontWeight: 600 }}>₹{(item.stock * item.unit_cost).toLocaleString()}</td>
-                          <td style={{ padding: '0.875rem 1rem', color: 'var(--text-muted)', fontSize: '0.8rem' }}>{item.supplier}</td>
-                          <td style={{ padding: '0.875rem 1rem' }}>
-                            <span style={{ padding: '0.2rem 0.6rem', borderRadius: '20px', fontSize: '0.72rem', fontWeight: 700, backgroundColor: isLow ? '#fee2e2' : '#d1fae5', color: isLow ? '#dc2626' : '#059669' }}>
+                          <td>{fmtINR(item.unit_cost)}</td>
+                          <td className="td-bold">{fmtINR(item.stock * item.unit_cost)}</td>
+                          <td className="td-muted">{item.supplier}</td>
+                          <td>
+                            <span className={`inv-badge ${isLow ? 'badge-low' : 'badge-ok'}`}>
                               {isLow ? 'Low Stock' : 'In Stock'}
                             </span>
                           </td>
-                          <td style={{ padding: '0.875rem 1rem', color: 'var(--text-muted)', fontSize: '0.8rem' }}>{item.last_updated}</td>
+                          <td>
+                            <div className="inv-actions">
+                              <button className="inv-icon-btn" title="Edit" onClick={() => openEdit(item)}>
+                                <Edit2 size={13}/>
+                              </button>
+                              <button className="inv-icon-btn del" title="Delete" onClick={() => setConfirmDel(item)}>
+                                <Trash2 size={13}/>
+                              </button>
+                            </div>
+                          </td>
                         </tr>
                       );
                     })}
@@ -258,73 +465,222 @@ export default function Inventory() {
                 </table>
               </div>
             )}
-            {!loading && filtered.length === 0 && (
-              <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
-                <Package size={40} style={{ marginBottom: '1rem', opacity: 0.4 }} />
-                <p>No items found</p>
-              </div>
-            )}
           </div>
+
+          {/* ── MOBILE CARDS ── */}
+          <div className="inv-mobile-cards">
+            {loading ? (
+              <div className="inv-loading"><Loader2 className="db-spin" size={20}/> Loading…</div>
+            ) : activeItems.length === 0 ? (
+              <div className="inv-empty">
+                <Package size={30} style={{opacity:0.15}}/>
+                <p>{search ? `No results for "${search}"` : `No ${mainTab.toLowerCase()} added yet`}</p>
+                <button className="inv-empty-add" onClick={() => setShowPicker(true)}>
+                  <Plus size={13}/> Add {mainTab === 'Plants' ? 'a plant' : 'a material'}
+                </button>
+              </div>
+            ) : activeItems.map(item => {
+              const isLow = item.stock < item.min_stock;
+              const pct   = barPct(item);
+              const barC  = isLow ? 'var(--c-red)' : 'var(--c-green)';
+              return (
+                <div key={item.id} className={`inv-mcard ${isLow ? 'mcard-low' : ''}`}>
+                  <div className="mcard-top">
+                    <div className="mcard-title-row">
+                      {isLow && <span className="inv-low-dot"/>}
+                      <span className="mcard-name">{item.name}</span>
+                    </div>
+                    {item.sub && <div className="mcard-sub">{item.sub}</div>}
+                    {mainTab === 'Materials' && (
+                      <span className="inv-cat-tag" style={{marginTop:'4px',display:'inline-flex'}}>{item.category}</span>
+                    )}
+                  </div>
+                  <div className="mcard-stk-row">
+                    <div className="inv-stk-ctrl">
+                      <button className="inv-stk-btn" onClick={() => adjustStock(item,-1)}>−</button>
+                      <span className={`inv-stk-num ${isLow ? 'stk-low' : 'stk-ok'}`}>{item.stock}</span>
+                      <button className="inv-stk-btn" onClick={() => adjustStock(item,+1)}>+</button>
+                    </div>
+                    <div className="mcard-track"><div className="mcard-fill" style={{width:`${pct}%`,background:barC}}/></div>
+                    <span className="inv-mini-lbl" style={{flexShrink:0}}>min {item.min_stock}</span>
+                  </div>
+                  <div className="mcard-grid">
+                    <div><div className="mcard-lbl">Unit</div><div className="mcard-val">{item.unit}</div></div>
+                    <div><div className="mcard-lbl">Unit Cost</div><div className="mcard-val">{fmtINR(item.unit_cost)}</div></div>
+                    <div><div className="mcard-lbl">Total Value</div><div className="mcard-val td-bold">{fmtINR(item.stock*item.unit_cost)}</div></div>
+                    <div><div className="mcard-lbl">Supplier</div><div className="mcard-val td-muted">{item.supplier}</div></div>
+                  </div>
+                  <div className="mcard-footer">
+                    <span className={`inv-badge ${isLow ? 'badge-low' : 'badge-ok'}`}>
+                      {isLow ? 'Low Stock' : 'In Stock'}
+                    </span>
+                    <div className="inv-actions">
+                      <button className="inv-icon-btn" onClick={() => openEdit(item)}><Edit2 size={13}/></button>
+                      <button className="inv-icon-btn del" onClick={() => setConfirmDel(item)}><Trash2 size={13}/></button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
         </main>
       </div>
 
-      {/* Add Modal */}
-      {showAddModal && (
-        <div className="modal-overlay">
-          <div className="modal-content animate-fade" style={{ maxWidth: '560px' }}>
-            <div className="modal-header">
-              <h3 style={{ fontWeight: 700 }}>Add Inventory Item</h3>
-              <button onClick={() => setShowAddModal(false)} style={{ background: 'none', border: 'none', fontSize: '1.2rem', cursor: 'pointer' }}>&times;</button>
+      {/* ════ CATEGORY PICKER ════ */}
+      {showPicker && (
+        <div className="inv-overlay" onClick={e => e.target===e.currentTarget && closeAll()}>
+          <div className="inv-modal inv-modal-sm">
+            <div className="inv-modal-head">
+              <span className="inv-modal-title">Select Category</span>
+              <button className="inv-modal-close" onClick={closeAll}>&times;</button>
             </div>
-            <form onSubmit={handleAdd}>
-              <div className="modal-body modal-form-grid">
-                <div className="form-group" style={{ gridColumn: '1/-1' }}>
-                  <label>Item Name</label>
-                  <input type="text" required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} className="input-field" placeholder="e.g. Areca Palm or Heavy Spade" />
-                </div>
-                {form.category === 'Plants' && (
-                  <div className="form-group" style={{ gridColumn: '1/-1' }}>
-                    <label>Botanical Name</label>
-                    <input type="text" value={form.botanical_name} onChange={e => setForm({ ...form, botanical_name: e.target.value })} className="input-field" placeholder="e.g. Dypsis lutescens" />
+            <div className="inv-picker-list">
+              {ALL_ADD_CATS.map(cat => {
+          let meta;
+  if (cat === 'Plants') {
+    meta = { icon: <Leaf size={14}/>, desc: 'Trees, shrubs, ground covers' };
+  } else if (cat === 'Materials') {
+    meta = { icon: <Package size={14}/>, desc: 'Fertilizers, tools, irrigation & more' };
+  }
+  
+  return (
+    <button key={cat} className="inv-picker-row" onClick={() => pickCategory(cat)}>
+      <span className="inv-picker-ico">{meta?.icon}</span>
+      <div>
+        <div className="inv-picker-name">{cat}</div>
+        <div className="inv-picker-desc">{meta?.desc}</div>
+      </div>
+      <span className="inv-picker-arr">›</span>
+    </button>
+  );
+})}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ════ ADD / EDIT FORM ════ */}
+      {showForm && (
+        <div className="inv-overlay" onClick={e => e.target===e.currentTarget && closeAll()}>
+          <div className="inv-modal">
+            <div className="inv-modal-head">
+              <span className="inv-modal-title">
+                {editItem ? `Edit — ${editItem.name}` : `Add ${form.category}`}
+              </span>
+              <button className="inv-modal-close" onClick={closeAll}>&times;</button>
+            </div>
+            <form onSubmit={handleSave} style={{display:'contents'}}>
+              <div className="inv-modal-body">
+                <div className="inv-form-sec">Basic Info</div>
+                <div className="inv-form-grid">
+                  <div className="inv-fg inv-full">
+                    <label>Item Name *</label>
+                    <input type="text" required
+                      placeholder={form.category==='Plants' ? 'e.g. Areca Palm' : 'e.g. NPK 19-19-19'}
+                      value={form.name} onChange={e => setForm({...form,name:e.target.value})}/>
                   </div>
-                )}
-                <div className="form-group">
-                  <label>Category</label>
-                  <select value={form.category} onChange={e => setForm({ ...form, category: e.target.value, botanical_name: e.target.value === 'Plants' ? form.botanical_name : '' })} className="input-field">
-                    {CATEGORIES.slice(1).map(c => <option key={c}>{c}</option>)}
-                  </select>
-                </div>
-                <div className="form-group">
-                  <label>{form.category === 'Plants' ? 'Height / Size' : 'Unit'}</label>
-                  <input type="text" required value={form.unit} onChange={e => setForm({ ...form, unit: e.target.value })} className="input-field" placeholder={form.category === 'Plants' ? 'e.g. 5-6 ft bag' : 'e.g. Nos / Bags / Meters'} />
-                </div>
-                <div className="form-group">
-                  <label>Current Stock</label>
-                  <input type="number" required value={form.stock} onChange={e => setForm({ ...form, stock: e.target.value })} className="input-field" />
-                </div>
-                <div className="form-group">
-                  <label>Minimum Stock Level</label>
-                  <input type="number" required value={form.min_stock} onChange={e => setForm({ ...form, min_stock: e.target.value })} className="input-field" />
-                </div>
-                <div className="form-group">
-                  <label>Unit Cost (₹)</label>
-                  <input type="number" required value={form.unit_cost} onChange={e => setForm({ ...form, unit_cost: e.target.value })} className="input-field" />
-                </div>
-                {form.category === 'Plants' && (
-                  <div className="form-group">
-                    <label>Nursery Source</label>
-                    <input type="text" value={form.supplier} onChange={e => setForm({ ...form, supplier: e.target.value })} className="input-field" placeholder="e.g. GreenGrow Nursery" />
+                  {form.category==='Plants' && (
+                    <div className="inv-fg inv-full">
+                      <label>Botanical Name</label>
+                      <input type="text" placeholder="e.g. Dypsis lutescens"
+                        value={form.botanical_name} onChange={e => setForm({...form,botanical_name:e.target.value})}/>
+                    </div>
+                  )}
+                                    <div className="inv-fg">
+                    <label>{form.category==='Plants' ? 'Height / Size *' : 'Unit *'}</label>
+                    <input type="text" required
+                      placeholder={form.category==='Plants' ? 'e.g. 5–6 ft bag' : 'e.g. Nos / Bags / Ltrs'}
+                      value={form.unit} onChange={e => setForm({...form,unit:e.target.value})}/>
                   </div>
-                )}
+
+                  {/* Category Dropdown - Only for Materials */}
+                  {form.category !== 'Plants' && (
+                    <div className="inv-fg">
+                      <label>Category *</label>
+                      <select 
+                        required 
+                        value={form.category} 
+                        onChange={e => setForm({...form, category: e.target.value})}
+                        style={{padding:'0.6rem 0.85rem', borderRadius:'8px', border:'1px solid var(--c-border)'}}
+                      >
+                        <option value="">Select Material Category</option>
+                        <option value="Fertilizers">Fertilizers</option>
+                        <option value="Irrigation">Irrigation</option>
+                        <option value="Tools">Tools</option>
+                        <option value="Aggregates">Aggregates</option>
+                        <option value="Others">Others</option>
+                      </select>
+                    </div>
+                  )}
+
+                  <div className="inv-fg">
+                    <label>Supplier</label>
+                    <input type="text"
+                      placeholder="e.g. General Vendor / Company Name"
+                      value={form.supplier} 
+                      onChange={e => setForm({...form, supplier: e.target.value})}/>
+                  </div>
+                </div>
+                <div className="inv-form-sec">Stock & Pricing</div>
+                <div className="inv-form-grid">
+                  <div className="inv-fg">
+                    <label>Current Stock *</label>
+                    <input type="number" required min="0" placeholder="0"
+                      value={form.stock} onChange={e => setForm({...form,stock:e.target.value})}/>
+                  </div>
+                  <div className="inv-fg">
+                    <label>Minimum Stock *</label>
+                    <input type="number" required min="0" placeholder="0"
+                      value={form.min_stock} onChange={e => setForm({...form,min_stock:e.target.value})}/>
+                  </div>
+                  <div className="inv-fg">
+                    <label>Unit Cost (₹) *</label>
+                    <input type="number" required min="0" placeholder="0"
+                      value={form.unit_cost} onChange={e => setForm({...form,unit_cost:e.target.value})}/>
+                  </div>
+                  <div className="inv-fg">
+                    <label>Est. Stock Value</label>
+                    <input type="text" readOnly
+                      value={(form.stock&&form.unit_cost)
+                        ?`₹${(Number(form.stock)*Number(form.unit_cost)).toLocaleString('en-IN')}`:'—'}/>
+                  </div>
+                </div>
               </div>
-              <div className="modal-footer">
-                <button type="button" className="btn-secondary" onClick={() => setShowAddModal(false)}>Cancel</button>
-                <button type="submit" className="btn-primary">Add Item</button>
+              <div className="inv-modal-foot">
+                <button type="button" className="btn-secondary" onClick={closeAll}>Cancel</button>
+                <button type="submit" className="btn-primary" disabled={saving}>
+                  {saving ? <Loader2 size={14} className="db-spin"/> : <CheckCircle2 size={14}/>}
+                  {editItem ? 'Save Changes' : 'Add Item'}
+                </button>
               </div>
             </form>
           </div>
         </div>
       )}
+
+      {/* ════ CONFIRM DELETE ════ */}
+      {confirmDel && (
+        <div className="inv-overlay" onClick={e => e.target===e.currentTarget && setConfirmDel(null)}>
+          <div className="inv-modal inv-modal-sm">
+            <div className="inv-modal-head">
+              <span className="inv-modal-title">Confirm Delete</span>
+              <button className="inv-modal-close" onClick={() => setConfirmDel(null)}>&times;</button>
+            </div>
+            <div className="inv-confirm-body">
+              <div className="inv-confirm-ico"><Trash2 size={20}/></div>
+              <div className="inv-confirm-title">Delete "{confirmDel.name}"?</div>
+            </div>
+            <div className="inv-modal-foot">
+              <button className="btn-secondary" onClick={() => setConfirmDel(null)}>Cancel</button>
+              <button className="inv-btn-danger" onClick={() => doDelete(confirmDel)}>
+                <Trash2 size={13}/> Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
