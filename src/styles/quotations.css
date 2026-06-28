@@ -752,9 +752,14 @@
   .qtp-page-footer { position: absolute; bottom: 0; left: 0; right: 0; }
 }
 
-/* Off-screen export root for html2pdf */
+/* Off-screen export root for html2pdf.
+   Must be exactly 794px wide (A4 @ 96 dpi) — this matches the sandbox
+   measurement width so content never reflows wider/narrower and creates
+   blank overflow pages on mobile devices. */
 #qt-pdf-export-root {
   position: fixed; top: 0; left: -10000px; z-index: -1;
+  width: 794px !important;
+  min-width: 794px !important;
 }
 
 /* ══════════════════════════════════════════════════════════════════
