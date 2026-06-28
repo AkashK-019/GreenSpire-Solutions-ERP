@@ -21,6 +21,7 @@ export default function TabFinance({ project }) {
     amount:      '',
     description: '',
     method:      'UPI (GPay / PhonePe)',
+    date:        new Date().toISOString().split('T')[0],
   });
 
   useEffect(() => { fetchTxs(); }, [project.id]);
@@ -55,12 +56,12 @@ export default function TabFinance({ project }) {
         type:        newTx.type,
         category:    newTx.category,
         amount:      Number(newTx.amount) || 0,
-        date:        new Date().toISOString().split('T')[0],
+        date:        newTx.date || new Date().toISOString().split('T')[0],
         description: desc,
       }]);
       if (error) throw error;
       setShowModal(false);
-      setNewTx({ type: 'Credit', category: 'Client Payments', amount: '', description: '', method: 'UPI (GPay / PhonePe)' });
+      setNewTx({ type: 'Credit', category: 'Client Payments', amount: '', description: '', method: 'UPI (GPay / PhonePe)', date: new Date().toISOString().split('T')[0] });
       fetchTxs();
     } catch (err) { alert(err.message); }
   };
@@ -370,6 +371,18 @@ export default function TabFinance({ project }) {
                       placeholder="e.g. 15000"
                     />
                   </div>
+                </div>
+
+                {/* Date */}
+                <div className="form-group">
+                  <label>Transaction Date</label>
+                  <input
+                    type="date" required
+                    value={newTx.date}
+                    onChange={e => setNewTx({ ...newTx, date: e.target.value })}
+                    className="input-field"
+                    max={new Date().toISOString().split('T')[0]}
+                  />
                 </div>
 
                 {/* Category */}
