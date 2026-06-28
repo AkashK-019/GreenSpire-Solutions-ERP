@@ -133,29 +133,60 @@
 .qt-locate-btn:hover { background: #f1f5f9; color: #0b3d27; border-color: #cbd5e1; }
 
 /* ── Modal ── */
+/* Overlay: full-screen, always centers the modal with space on all sides */
 .qt-modal-overlay {
-  position: fixed; inset: 0; background: rgba(0,0,0,.45); backdrop-filter: blur(4px);
-  z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 1rem;
+  position: fixed; inset: 0;
+  background: rgba(11,28,20,.50);
+  backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px);
+  z-index: 1000;
+  display: flex; align-items: center; justify-content: center;
+  padding: 1rem;           /* guarantees gap from every viewport edge */
 }
+
+/* Modal box — never taller than viewport, body scrolls inside */
 .qt-modal {
-  background: #fff; border-radius: 18px; box-shadow: 0 20px 60px rgba(0,0,0,.2);
-  width: 100%; max-width: 680px; max-height: 90vh; display: flex; flex-direction: column;
-  animation: qtModalIn .2s ease;
+  background: #fff;
+  border-radius: 16px;
+  width: 100%; max-width: 680px;
+  height: auto; max-height: calc(100dvh - 2rem);
+  display: flex; flex-direction: column;
+  overflow: hidden;        /* children must not bleed out */
+  box-shadow:
+    0 2px 8px  rgba(0,0,0,.06),
+    0 16px 40px rgba(0,0,0,.16),
+    0 40px 80px rgba(0,0,0,.10);
+  animation: qtModalIn .2s ease-out;
 }
-@keyframes qtModalIn { from { opacity: 0; transform: scale(.95) translateY(12px); } to { opacity: 1; transform: none; } }
+@keyframes qtModalIn { from { opacity: 0; transform: scale(.97); } to { opacity: 1; transform: scale(1); } }
+
+/* Header — fixed, never scrolls */
 .qt-modal-head {
-  padding: 1.2rem 1.5rem; border-bottom: 1px solid #f1f5f9;
+  padding: 1.25rem 1.5rem; border-bottom: 1px solid #f1f5f9;
   display: flex; align-items: center; justify-content: space-between;
+  flex-shrink: 0; background: #fff;
 }
 .qt-modal-title  { font-size: 1.05rem; font-weight: 700; color: #0b3d27; margin: 0; }
 .qt-modal-close  {
-  width: 30px; height: 30px; border: none; background: #f8fafc; border-radius: 8px;
-  font-size: 1.1rem; cursor: pointer; color: #64748b; transition: all .15s;
-  display: flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px; border: 1px solid #e2e8f0; background: #f8fafc; border-radius: 8px;
+  font-size: 1.2rem; cursor: pointer; color: #64748b; transition: all .15s;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0; line-height: 1;
 }
-.qt-modal-close:hover { background: #f1f5f9; color: #0b3d27; }
-.qt-modal-body  { flex: 1; overflow-y: auto; padding: 1.25rem 1.5rem; }
-.qt-modal-foot  { padding: 1rem 1.5rem; border-top: 1px solid #f1f5f9; display: flex; justify-content: flex-end; gap: .75rem; }
+.qt-modal-close:hover { background: #fef2f2; border-color: #fca5a5; color: #ef4444; }
+
+/* Body — only vertical scroll, horizontal is clamped */
+.qt-modal-body {
+  flex: 1; min-height: 0;          /* critical for flex scroll */
+  overflow-y: auto; overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  padding: 1.25rem 1.5rem;
+}
+
+/* Footer — fixed at bottom, never scrolls */
+.qt-modal-foot {
+  padding: 1rem 1.5rem; border-top: 1px solid #f1f5f9;
+  display: flex; align-items: center; justify-content: flex-end; gap: .75rem;
+  flex-shrink: 0; background: #fff;
+}
 
 /* Form grid inside modal */
 .qt-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .85rem 1rem; }
@@ -170,6 +201,12 @@
 
 /* ── Wide modal for product line items ── */
 .qt-modal.qt-modal-wide { max-width: 960px; }
+
+/* ── Area-calc modal floats above the main modal ── */
+.qt-modal-overlay.qt-calc-overlay {
+  background: rgba(0,0,0,.2);
+  z-index: 1100;
+}
 
 /* ── Section divider inside modal ── */
 .qt-section-label {
@@ -720,10 +757,142 @@
   position: fixed; top: 0; left: -10000px; z-index: -1;
 }
 
-/* ── Responsive ── */
-@media (max-width: 680px) {
-  .qt-main { padding: 1rem; }
+/* ══════════════════════════════════════════════════════════════════
+   RESPONSIVE — Tablet (≤ 900px) + Mobile (≤ 600px)
+   Modal is ALWAYS centered with space on every side (like Projects).
+   ONLY .qt-items-wrap scrolls horizontally — nothing else bleeds.
+══════════════════════════════════════════════════════════════════ */
+
+/* ── Desktop: items-wrap does NOT scroll — table fills naturally ── */
+.qt-items-wrap {
+  overflow-x: visible;   /* no scroll on desktop */
+}
+.qt-items-table {
+  width: 100%;           /* fills the wrapper on desktop */
+  min-width: unset;
+}
+
+/* ── Tablet (601px – 900px) ─────────────────────────────────── */
+@media (max-width: 900px) {
+  /* Modal: stays centered, fills most viewport, space on sides */
+  .qt-modal,
+  .qt-modal.qt-modal-wide {
+    max-width: calc(100vw - 2rem);
+    width: calc(100vw - 2rem);
+    max-height: calc(100dvh - 2rem);
+  }
+
+  /* Form grid stays 2-col but tighter gap */
+  .qt-form-grid { gap: .7rem .75rem; }
+
+  /* Metrics: 3 across on tablet */
+  .qt-metrics { grid-template-columns: repeat(3, 1fr); }
+
+  /* Cards: 2 columns */
+  .qt-grid { grid-template-columns: repeat(2, 1fr); }
+
+  /* Modal chrome tighter */
+  .qt-modal-head { padding: 1rem 1.25rem; }
+  .qt-modal-body { padding: 1rem 1.25rem; }
+  .qt-modal-foot { padding: .85rem 1.25rem; }
+
+  /* Items table cells slightly tighter */
+  .qt-items-table th,
+  .qt-items-table td { padding: .42rem .5rem; }
+
+  /* Enable horizontal scroll on items section only */
+  .qt-items-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    background:
+      linear-gradient(to right, #fff 0%, transparent 28px) left  / 48px 100% no-repeat local,
+      linear-gradient(to left,  #fff 0%, transparent 28px) right / 48px 100% no-repeat local,
+      radial-gradient(ellipse at left,  rgba(0,0,0,.09) 0%, transparent 70%) left  / 20px 100% no-repeat scroll,
+      radial-gradient(ellipse at right, rgba(0,0,0,.09) 0%, transparent 70%) right / 20px 100% no-repeat scroll;
+    border-radius: 10px;
+  }
+  .qt-items-table { min-width: 640px; width: max-content; }
+}
+
+/* ── Mobile (≤ 600px) ───────────────────────────────────────── */
+@media (max-width: 600px) {
+  /* ─ Page layout ─ */
+  .qt-main { padding: .85rem .9rem; }
+
+  /* ─ Page header ─ */
+  .qt-page-head { flex-direction: column; align-items: flex-start; gap: .6rem; }
+  .qt-page-title { font-size: 1.2rem; }
+  .qt-add-btn { width: 100%; justify-content: center; }
+
+  /* ─ Metrics: 2 × 2 (5th wraps to new row) ─ */
+  .qt-metrics { grid-template-columns: repeat(2, 1fr); gap: .6rem; }
+  .qt-metric  { padding: .7rem .85rem; gap: .6rem; }
+  .qt-metric-val { font-size: 1.1rem; }
+
+  /* ─ Toolbar ─ */
+  .qt-toolbar { flex-direction: column; align-items: stretch; gap: .6rem; }
+  .qt-search-wrap { max-width: 100%; }
+  .qt-filters { justify-content: flex-start; }
+  .qt-filter-btn { font-size: .75rem; padding: .33rem .7rem; }
+
+  /* ─ Cards: single column ─ */
   .qt-grid { grid-template-columns: 1fr; }
-  .qt-form-grid, .qt-gst-row { grid-template-columns: 1fr; }
+
+  /* ─ Modal: centered with padding on all sides (matches Projects exactly) ─ */
+  .qt-modal-overlay { padding: .75rem; align-items: center; }
+  .qt-modal,
+  .qt-modal.qt-modal-wide {
+    max-width: 100%;
+    width: 100%;
+    max-height: calc(100dvh - 1.5rem);
+    border-radius: 14px;    /* stays rounded on all 4 corners */
+  }
+  .qt-modal-head { padding: 1rem 1.1rem; }
+  .qt-modal-body { padding: 1rem 1.1rem; }
+  .qt-modal-foot {
+    padding: .85rem 1.1rem;
+    padding-bottom: max(.85rem, env(safe-area-inset-bottom));
+    flex-direction: column-reverse;
+    gap: .5rem;
+  }
+  .qt-modal-foot .btn-secondary,
+  .qt-modal-foot .btn-primary { width: 100%; justify-content: center; }
+
+  /* ─ Form grid: single column ─ */
+  .qt-form-grid { grid-template-columns: 1fr; gap: .65rem; }
   .qt-full { grid-column: 1; }
+  .qt-gst-row { grid-template-columns: 1fr; gap: .65rem; }
+  .qt-form-grid .form-group { grid-column: 1; }
+
+  /* ─ Section labels ─ */
+  .qt-section-label { margin: 1rem 0 .4rem; }
+
+  /* ─ Items table cells: tighter ─ */
+  .qt-items-table th,
+  .qt-items-table td { padding: .38rem .42rem; }
+
+  /* Mobile scroll (already inherited from tablet block, re-stated for clarity) */
+  .qt-items-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .qt-items-table { min-width: 580px; width: max-content; }
+
+  /* Add-row button: full width */
+  .qt-add-row-btn { width: 100%; justify-content: center; box-sizing: border-box; }
+
+  /* ─ Summary box ─ */
+  .qt-summary-box { margin-top: .6rem; }
+
+  /* ─ Locate / calculator icon buttons: never shrink ─ */
+  .qt-locate-btn { flex-shrink: 0; }
+
+  /* ─ Approve modal ─ */
+  .qt-approve-modal { border-radius: 14px; padding: 1.25rem 1rem; }
+  .qt-approve-btns  { flex-direction: column; }
+  .qt-approve-btns .btn-secondary,
+  .qt-approve-btns .btn-approve { width: 100%; text-align: center; }
+
+  /* ─ Share dropdown: re-centre so it never clips the right edge ─ */
+  .qt-share-dropdown { right: auto; left: 50%; transform: translateX(-50%); }
 }
