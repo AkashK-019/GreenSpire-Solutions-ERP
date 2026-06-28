@@ -537,7 +537,7 @@ export default function Quotations() {
 
     const sandbox = document.createElement('div');
     sandbox.style.cssText = [
-      'position:absolute', 'top:-9999px', 'left:-9999px', 'z-index:-1',
+      'position:fixed', 'top:0', 'left:-9999px', 'z-index:-1',
       'width:794px',
       'visibility:hidden', 'pointer-events:none',
       'font-family:Inter,Arial,sans-serif', 'font-size:12.5pt',
@@ -927,56 +927,50 @@ export default function Quotations() {
     setTimeout(() => window.print(), 100);
   };
 
-  /* ── Download an actual PDF file (html2pdf) — one click, no print dialog ── */
+  /* ── Download an actual PDF file — one click, no print dialog ── */
   const handleDownloadPDF = async (q) => {
     setShareOpen(null);
     let root = document.getElementById('qt-pdf-export-root');
     if (!root) { root = document.createElement('div'); root.id = 'qt-pdf-export-root'; document.body.appendChild(root); }
-    // Force 794px width so html2pdf renders at the same width used for height measurements.
-    // Without this, mobile viewports cause reflow → content gets taller → blank overflow pages.
+    // Force A4-pixel width so mobile viewport never causes reflow
     root.style.width    = '794px';
     root.style.minWidth = '794px';
     root.innerHTML = await buildQuotationDocHTML(q);
 
     const pageDivs = Array.from(root.querySelectorAll('.qt-print-doc'));
-    // Force exact integer px — 297mm @ 96dpi = 1122.52px (fractional causes blank pages)
     pageDivs.forEach(div => {
       div.style.width     = '794px';
       div.style.minWidth  = '794px';
       div.style.height    = '1122px';
       div.style.minHeight = '1122px';
       div.style.maxHeight = '1122px';
+      div.style.overflow  = 'hidden';
     });
 
     const filename = `Quotation-${q.quotation_number || q.id}.pdf`;
-    // On mobile, devicePixelRatio can be 3× which causes html2canvas to render an oversized
-    // canvas that misaligns with jsPDF's A4 page boundary. Fixing scale to 2 and explicitly
-    // setting windowWidth to 794 prevents blank pages on mobile.
+    // width:794 + height:1122 + windowWidth:794 clamps html2canvas to exactly one A4 page.
+    // Without these, mobile browsers render the full scroll height of the container,
+    // producing an oversized canvas that jsPDF splits → blank page between pages.
     const opts = {
       margin: 0,
       image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true, scrollX: 0, scrollY: 0, windowWidth: 794 },
+      html2canvas: { scale: 2, useCORS: true, scrollX: 0, scrollY: 0, windowWidth: 794, width: 794, height: 1122 },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
     };
 
     try {
       if (pageDivs.length === 1) {
-        // Single page — straightforward
         await html2pdf().set({ ...opts, filename }).from(pageDivs[0]).save();
       } else {
-        // Multi-page — render each div to a data-URI then combine into one PDF
-        // html2pdf bundles jsPDF; get it from the worker's internal pdf object
-        const worker = html2pdf().set(opts);
-        // Get first page as PDF instance
+        // Multi-page: render each div separately then stitch into one PDF
+        const worker = html2pdf().set({ ...opts, filename });
         await worker.from(pageDivs[0]).toImg().toPdf();
         const pdfInstance = worker.prop.pdf;
-        // Add remaining pages
         for (let i = 1; i < pageDivs.length; i++) {
           const w2 = html2pdf().set(opts);
           await w2.from(pageDivs[i]).toImg();
-          const imgData = w2.prop.img;
           pdfInstance.addPage();
-          pdfInstance.addImage(imgData, 'JPEG', 0, 0, 210, 297);
+          pdfInstance.addImage(w2.prop.img, 'JPEG', 0, 0, 210, 297);
         }
         pdfInstance.save(filename);
       }
@@ -984,6 +978,8 @@ export default function Quotations() {
       alert('Failed to generate PDF: ' + err.message);
     } finally {
       root.innerHTML = '';
+      root.style.width = '';
+      root.style.minWidth = '';
     }
   };
 
@@ -991,7 +987,7 @@ export default function Quotations() {
   const buildPdfBlob = async (q) => {
     let root = document.getElementById('qt-pdf-export-root');
     if (!root) { root = document.createElement('div'); root.id = 'qt-pdf-export-root'; document.body.appendChild(root); }
-    // Force 794px so mobile viewport reflow doesn't cause blank pages
+    // Force 794px so mobile viewport never causes reflow → blank pages
     root.style.width    = '794px';
     root.style.minWidth = '794px';
     root.innerHTML = await buildQuotationDocHTML(q);
@@ -1003,15 +999,17 @@ export default function Quotations() {
       div.style.height    = '1122px';
       div.style.minHeight = '1122px';
       div.style.maxHeight = '1122px';
+      div.style.overflow  = 'hidden';
     });
 
     const filename = `Quotation-${q.quotation_number || q.id}.pdf`;
-    // windowWidth: 794 prevents html2canvas from using the mobile viewport width,
-    // which would cause content to reflow and become taller than the measured heights.
+    // windowWidth:794 + width:794 + height:1122 tells html2canvas to capture
+    // exactly one A4 page worth of pixels — no more, no less.
+    // This is what prevents the blank page between pages on mobile.
     const opts = {
       margin: 0,
       image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true, scrollX: 0, scrollY: 0, windowWidth: 794 },
+      html2canvas: { scale: 2, useCORS: true, scrollX: 0, scrollY: 0, windowWidth: 794, width: 794, height: 1122 },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
     };
 
@@ -1026,14 +1024,15 @@ export default function Quotations() {
       for (let i = 1; i < pageDivs.length; i++) {
         const w2 = html2pdf().set(opts);
         await w2.from(pageDivs[i]).toImg();
-        const imgData = w2.prop.img;
         pdfInstance.addPage();
-        pdfInstance.addImage(imgData, 'JPEG', 0, 0, 210, 297);
+        pdfInstance.addImage(w2.prop.img, 'JPEG', 0, 0, 210, 297);
       }
       const blob = pdfInstance.output('blob');
       return { blob, filename };
     } finally {
       root.innerHTML = '';
+      root.style.width = '';
+      root.style.minWidth = '';
     }
   };
 

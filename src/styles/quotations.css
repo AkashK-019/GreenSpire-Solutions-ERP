@@ -443,18 +443,19 @@
 .qtp-logo-mark img {
   width: 100%; height: 100%; object-fit: contain;
 }
-.qtp-brand-text { display: flex; flex-direction: column; gap: 0; align-items: flex-start; }
-.qtp-brand-name-wrap { position: relative; display: inline-block; }
+.qtp-brand-text { display: flex; flex-direction: column; gap: 0; align-items: center; }
+.qtp-brand-name-wrap { position: relative; display: block; text-align: center; }
 .qtp-brand {
   font-size: 29pt; font-weight: 800; color: #5c3a21; letter-spacing: .01em;
   line-height: 1.05; font-family: 'Lora', Georgia, serif; white-space: nowrap; display: block;
+  text-align: center;
 }
 .qtp-brand-suffix {
   display: block; font-size: 13.5pt; font-weight: 700; color: #5c3a21;
   font-family: 'Lora', Georgia, serif; line-height: 1.1;
   text-align: center; letter-spacing: .16em; width: 100%;
 }
-.qtp-tagline { font-size: 9.5pt; font-weight: 500; color: #64748b; letter-spacing: .03em; margin-top: 4px; }
+.qtp-tagline { font-size: 9.5pt; font-weight: 500; color: #64748b; letter-spacing: .03em; margin-top: 4px; text-align: center; }
 
 /* Right side of header */
 .qtp-header-right { text-align: right; flex-shrink: 0; }
@@ -752,14 +753,9 @@
   .qtp-page-footer { position: absolute; bottom: 0; left: 0; right: 0; }
 }
 
-/* Off-screen export root for html2pdf.
-   Must be exactly 794px wide (A4 @ 96 dpi) — this matches the sandbox
-   measurement width so content never reflows wider/narrower and creates
-   blank overflow pages on mobile devices. */
+/* Off-screen export root for html2pdf */
 #qt-pdf-export-root {
   position: fixed; top: 0; left: -10000px; z-index: -1;
-  width: 794px !important;
-  min-width: 794px !important;
 }
 
 /* ══════════════════════════════════════════════════════════════════
