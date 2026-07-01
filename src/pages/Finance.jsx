@@ -8,6 +8,13 @@ import {
 import { supabase } from '../supabase';
 import '../styles/Finance.css';
 
+// Same classification used on the project-level ledger (TabFinance) —
+// keeping these identical everywhere is what lets the Dashboard reliably
+// sum things like "Labour Charges" by exact category match.
+const CREDIT_CATS = ['Client Payments', 'Advance Received', 'Extra Work Charges'];
+const DEBIT_CATS  = ['Labour Charges', 'Site Expense', 'Material Purchase', 'Transport', 'Vendor Payment', 'Printing', 'Miscellaneous'];
+const PAY_METHODS = ['UPI', 'NEFT', 'Bank Transfer', 'Cheque', 'Cash'];
+
 export default function Finance() {
   const [loading, setLoading] = useState(true);
   const [transactions, setTransactions] = useState([]);
@@ -20,12 +27,13 @@ export default function Finance() {
 
   const [form, setForm] = useState({
     type: 'Income',
+    category: 'Client Payments',
     amount: '',
-    category: '',
     project_id: '',
     date: new Date().toISOString().split('T')[0],
     method: 'UPI',
-    ref: ''
+    ref: '',
+    note: '',
   });
 
   useEffect(() => { fetchLedgerData(); }, []);
@@ -70,11 +78,20 @@ export default function Finance() {
     return { method: 'General', ref: 'N/A', note: desc };
   };
 
+  /* ── Type change resets category to a valid option for that type ── */
+  const handleTypeChange = (type) => {
+    setForm(prev => ({
+      ...prev,
+      type,
+      category: type === 'Income' ? CREDIT_CATS[0] : DEBIT_CATS[0],
+    }));
+  };
+
   /* ── Add transaction ── */
   const handleAddTx = async (e) => {
     e.preventDefault();
     try {
-      const descriptionStr = `Method: ${form.method} | Ref: ${form.ref || 'N/A'} | Note: ${form.category}`;
+      const descriptionStr = `Method: ${form.method} | Ref: ${form.ref || 'N/A'} | Note: ${form.note || form.category}`;
       const dbType = form.type === 'Income' ? 'Credit' : 'Debit';
 
       const { error } = await supabase.from('finance_ledger').insert([{
@@ -90,8 +107,8 @@ export default function Finance() {
 
       setShowAddTxModal(false);
       setForm({
-        type: 'Income', amount: '', category: '', project_id: '',
-        date: new Date().toISOString().split('T')[0], method: 'UPI', ref: ''
+        type: 'Income', category: 'Client Payments', amount: '', project_id: '',
+        date: new Date().toISOString().split('T')[0], method: 'UPI', ref: '', note: '',
       });
       fetchLedgerData();
     } catch (err) {
@@ -402,7 +419,7 @@ export default function Finance() {
                     <label>Transaction Type</label>
                     <select
                       value={form.type}
-                      onChange={(e) => setForm({ ...form, type: e.target.value })}
+                      onChange={(e) => handleTypeChange(e.target.value)}
                       className="input-field"
                     >
                       <option value="Income">Income (Customer Inflow)</option>
@@ -415,6 +432,7 @@ export default function Finance() {
                     <input
                       type="number"
                       required
+                      min="1"
                       value={form.amount}
                       onChange={(e) => setForm({ ...form, amount: e.target.value })}
                       className="input-field"
@@ -422,16 +440,20 @@ export default function Finance() {
                     />
                   </div>
 
+                  {/* Category — a real classification dropdown, not free text,
+                      so entries like "Labour Charges" match consistently
+                      everywhere (including the Dashboard KPIs). */}
                   <div className="form-group">
-                    <label>Description / Category</label>
-                    <input
-                      type="text"
-                      required
+                    <label>Category</label>
+                    <select
                       value={form.category}
                       onChange={(e) => setForm({ ...form, category: e.target.value })}
                       className="input-field"
-                      placeholder="e.g. Plant Purchases, Milestone payment"
-                    />
+                    >
+                      {(form.type === 'Income' ? CREDIT_CATS : DEBIT_CATS).map(c => (
+                        <option key={c} value={c}>{c}</option>
+                      ))}
+                    </select>
                   </div>
 
                   <div className="form-group">
@@ -457,6 +479,7 @@ export default function Finance() {
                         value={form.date}
                         onChange={(e) => setForm({ ...form, date: e.target.value })}
                         className="input-field"
+                        max={new Date().toISOString().split('T')[0]}
                       />
                     </div>
                     <div className="form-group">
@@ -466,11 +489,9 @@ export default function Finance() {
                         onChange={(e) => setForm({ ...form, method: e.target.value })}
                         className="input-field"
                       >
-                        <option value="UPI">UPI (GPay / PhonePe)</option>
-                        <option value="NEFT">NEFT / RTGS</option>
-                        <option value="Bank Transfer">Bank Transfer</option>
-                        <option value="Cheque">Cheque</option>
-                        <option value="Cash">Cash</option>
+                        {PAY_METHODS.map(m => (
+                          <option key={m} value={m}>{m}</option>
+                        ))}
                       </select>
                     </div>
                   </div>
@@ -483,6 +504,17 @@ export default function Finance() {
                       onChange={(e) => setForm({ ...form, ref: e.target.value })}
                       className="input-field"
                       placeholder="e.g. UPI882019483 or Check #889"
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label>Note (optional)</label>
+                    <input
+                      type="text"
+                      value={form.note}
+                      onChange={(e) => setForm({ ...form, note: e.target.value })}
+                      className="input-field"
+                      placeholder="e.g. Milestone 1 payment received"
                     />
                   </div>
                 </div>

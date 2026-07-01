@@ -897,3 +897,5 @@
   /* ─ Share dropdown: re-centre so it never clips the right edge ─ */
   .qt-share-dropdown { right: auto; left: 50%; transform: translateX(-50%); }
 }
+
+

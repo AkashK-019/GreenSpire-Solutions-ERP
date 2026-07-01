@@ -17,9 +17,13 @@ export default function Dashboard() {
 
   const [loading, setLoading] = useState(true);
   const [kpis, setKpis] = useState({
-    activeProjects: 0, pendingQuotations: 0,
-    totalReceivables: 0, monthlyExpenses: 0,
-    labourPending: 0, plantsInStock: 0,
+    activeProjects: 0,
+    pendingQuotations: 0,
+    totalReceivables: 0,
+    monthlyExpenses: 0,
+    labourPaidCurrentMonth: 0,
+    labourPaidPreviousMonth: 0,
+    plantsInStock: 0,
   });
   const [projectStatusCounts, setProjectStatusCounts] = useState({ Active: 0, Completed: 0, Pending: 0, 'On Hold': 0 });
   const [recentProjects, setRecentProjects] = useState([]);
@@ -27,41 +31,97 @@ export default function Dashboard() {
 
   useEffect(() => { fetchDashboardData(); }, []);
 
+  // Build a local YYYY-MM-DD string without going through toISOString(),
+  // which converts to UTC and can silently roll the date back a day
+  // (e.g. in IST, midnight local on the 1st becomes 18:30 the previous
+  // day in UTC). That off-by-one was corrupting the month boundaries
+  // used below, which is why "previous month" was pulling in extra data.
+  const toDateStr = (d) => {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  };
+
   const fetchDashboardData = async () => {
     setLoading(true);
     try {
+      const today = new Date();
+
+      // Current month range: [firstDayCurrentMonth, firstDayNextMonth)
+      const firstDayCurrentMonth = toDateStr(new Date(today.getFullYear(), today.getMonth(), 1));
+      const firstDayNextMonth    = toDateStr(new Date(today.getFullYear(), today.getMonth() + 1, 1));
+
+      // Previous month range: [firstDayPreviousMonth, firstDayCurrentMonth)
+      const firstDayPreviousMonth = toDateStr(new Date(today.getFullYear(), today.getMonth() - 1, 1));
+
       const [
-        projectsRes, allProjectsRes, quotationsRes, invoicesRes,
-        expensesRes, labourRes, plantsRes, recentProjectsRes, recentTxRes,
+        projectsRes,
+        allProjectsRes,
+        quotationsRes,
+        invoicesRes,
+        expensesRes,
+        labourCurrentRes,
+        labourPreviousRes,
+        recentProjectsRes,
+        recentTxRes,
       ] = await Promise.all([
         supabase.from('projects').select('id', { count: 'exact', head: true }).eq('status', 'Active'),
         supabase.from('projects').select('status'),
         supabase.from('quotations').select('id', { count: 'exact', head: true }).eq('status', 'Pending'),
         supabase.from('invoices').select('total_amount').in('status', ['Unpaid', 'Overdue']),
-        supabase.from('finance_ledger').select('amount').eq('type', 'Debit')
-          .gte('date', new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0]),
-        supabase.from('labour_payments').select('amount_paid')
-          .gte('payment_date', new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0]),
-        supabase.from('plants_inventory').select('quantity_available'),
-        supabase.from('projects').select('id, name, client_name, status, type, budget, site_address').order('created_at', { ascending: false }).limit(5),
-        supabase.from('finance_ledger').select('*, projects(name)').order('date', { ascending: false }).limit(6),
+        supabase
+          .from('finance_ledger')
+          .select('amount')
+          .eq('type', 'Debit')
+          .gte('date', firstDayCurrentMonth)
+          .lt('date', firstDayNextMonth),
+        // Labour Charges — current month only
+        supabase
+          .from('finance_ledger')
+          .select('amount')
+          .eq('type', 'Debit')
+          .eq('category', 'Labour Charges')
+          .gte('date', firstDayCurrentMonth)
+          .lt('date', firstDayNextMonth),
+        // Labour Charges — previous month only
+        supabase
+          .from('finance_ledger')
+          .select('amount')
+          .eq('type', 'Debit')
+          .eq('category', 'Labour Charges')
+          .gte('date', firstDayPreviousMonth)
+          .lt('date', firstDayCurrentMonth),
+        supabase
+          .from('projects')
+          .select('id, name, client_name, status, type, budget, site_address')
+          .order('created_at', { ascending: false })
+          .limit(5),
+        supabase
+          .from('finance_ledger')
+          .select('*, projects(name)')
+          .order('date', { ascending: false })
+          .limit(6),
       ]);
 
       const totalReceivables = (invoicesRes.data || []).reduce((s, r) => s + (r.total_amount || 0), 0);
       const totalExpenses    = (expensesRes.data || []).reduce((s, r) => s + (r.amount || 0), 0);
-      const labourPaid       = (labourRes.data || []).reduce((s, r) => s + (r.amount_paid || 0), 0);
-      const plantsTotal      = (plantsRes.data || []).reduce((s, r) => s + (r.quantity_available || 0), 0);
+      const labourPaidCurrentMonth  = (labourCurrentRes.data  || []).reduce((s, r) => s + Number(r.amount || 0), 0);
+      const labourPaidPreviousMonth = (labourPreviousRes.data || []).reduce((s, r) => s + Number(r.amount || 0), 0);
 
       setKpis({
         activeProjects: projectsRes.count || 0,
         pendingQuotations: quotationsRes.count || 0,
-        totalReceivables, monthlyExpenses: totalExpenses,
-        labourPending: labourPaid, plantsInStock: plantsTotal,
+        totalReceivables,
+        monthlyExpenses: totalExpenses,
+        labourPaidCurrentMonth,
+        labourPaidPreviousMonth,
       });
 
       const counts = { Active: 0, Completed: 0, Pending: 0, 'On Hold': 0 };
       (allProjectsRes.data || []).forEach(p => { if (counts[p.status] !== undefined) counts[p.status]++; });
       setProjectStatusCounts(counts);
+
       setRecentProjects(recentProjectsRes.data || []);
       setRecentTransactions(recentTxRes.data || []);
     } catch (err) {
@@ -119,11 +179,12 @@ export default function Dashboard() {
     });
   };
 
+  // 4 small KPI cards — fills the 2x2 grid
   const smallKpis = [
-    { label: 'Pending Quotations',  value: loading ? '—' : kpis.pendingQuotations,              icon: FileText,     color: '#f59e0b', to: '/projects'  },
-    { label: 'Labour Paid (Month)', value: loading ? '—' : fmt(kpis.labourPending),              icon: Users,        color: '#8b5cf6', to: '/labour'    },
-    { label: 'Plants in Stock',     value: loading ? '—' : kpis.plantsInStock.toLocaleString(),  icon: Sprout,       color: '#10b981', to: '/inventory' },
-    { label: 'Monthly Expenses',    value: loading ? '—' : fmt(kpis.monthlyExpenses),            icon: TrendingDown, color: '#ef4444', to: '/finance'   },
+    { label: 'Pending Quotations',          value: loading ? '—' : kpis.pendingQuotations,               icon: FileText,     color: '#f59e0b', to: '/projects' },
+    { label: 'Labour Paid (This Month)',    value: loading ? '—' : fmt(kpis.labourPaidCurrentMonth),      icon: Users,        color: '#8b5cf6', to: '/finance'  },
+    { label: 'Labour Paid (Previous Month)', value: loading ? '—' : fmt(kpis.labourPaidPreviousMonth),    icon: Users,        color: '#6366f1', to: '/finance'  },
+    { label: 'Monthly Expenses',            value: loading ? '—' : fmt(kpis.monthlyExpenses),             icon: TrendingDown, color: '#ef4444', to: '/finance'  },
   ];
 
   const typeConfig = {
@@ -210,7 +271,7 @@ export default function Dashboard() {
           {/* Lower section */}
           <div className="db-lower">
 
-            {/* Recent Projects  */}
+            {/* Recent Projects */}
             <section className="db-card">
               <div className="db-card-head">
                 <div>
@@ -229,8 +290,8 @@ export default function Dashboard() {
               ) : (
                 <div className="db-project-cards">
                   {recentProjects.map(p => {
-                    const sc  = statusConfig[p.status]  || statusConfig['On Hold'];
-                    const tc  = typeConfig[p.type]      || { color: '#64748b', bg: '#f1f5f9' };
+                    const sc = statusConfig[p.status] || statusConfig['On Hold'];
+                    const tc = typeConfig[p.type] || { color: '#64748b', bg: '#f1f5f9' };
                     return (
                       <div key={p.id} className="db-project-card" onClick={() => navigate(`/projects/${p.id}`)}>
                         <div className="db-project-card-left">

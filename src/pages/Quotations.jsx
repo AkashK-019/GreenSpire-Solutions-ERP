@@ -185,7 +185,10 @@ export default function Quotations() {
       const { data, error } = await supabase
         .from('quotations')
         .select('*')
-        .is('project_id', null)
+        // Standalone quotations not yet tied to a project, PLUS any
+        // quotation that's been Approved — even if it now belongs to a
+        // project (e.g. approved from inside a project's Quotations tab).
+        .or('project_id.is.null,status.eq.Approved')
         .order('created_at', { ascending: false });
       if (error) throw error;
       setQuotations(data || []);
@@ -389,7 +392,7 @@ export default function Quotations() {
 
       const { error: qErr } = await supabase
         .from('quotations')
-        .update({ status: 'Approved', converted_project_id: proj.id })
+        .update({ status: 'Approved', converted_project_id: proj.id, project_id: proj.id })
         .eq('id', q.id);
       if (qErr) throw qErr;
 

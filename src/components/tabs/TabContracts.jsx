@@ -1,41 +1,52 @@
-import { FileSignature } from 'lucide-react';
 
-export default function TabContracts({ project }) {
+import { Construction } from 'lucide-react';
+
+export default function Reports() {
   return (
-    <div className="animate-fade">
-      <div className="tab-page-head">
-        <div>
-          <h2 className="tab-page-title">Contracts</h2>
-        </div>
-      </div>
-
-      <div style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '5rem 2rem',
-        textAlign: 'center',
-        gap: '1rem'
-      }}>
-        <div style={{
-          width: '72px',
-          height: '72px',
-          borderRadius: '18px',
-          background: 'linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          marginBottom: '0.5rem'
-        }}>
-          <FileSignature size={32} style={{ color: '#10b981' }} />
-        </div>
-        <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: '#0b3d27', margin: 0 }}>
-          Contracts
-        </h3>
-        <p style={{ color: '#94a3b8', fontSize: '0.88rem', maxWidth: '340px', lineHeight: 1.6, margin: 0 }}>
-          Contract management is coming soon. You will be able to create, track and e-sign project contracts from here.
-        </p>
+    <div style={{ display: 'flex', minHeight: '100vh' }}>
+      <Sidebar />
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+        <Header title="Reports" />
+        <main
+          className="main-content animate-fade"
+          style={{
+            display: 'flex',
+            flex: 1,
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <div
+            className="stat-card"
+            style={{
+              padding: '3rem 2.5rem',
+              textAlign: 'center',
+              maxWidth: '420px',
+            }}
+          >
+            <div
+              style={{
+                width: '64px',
+                height: '64px',
+                borderRadius: '16px',
+                background: '#f1f5f9',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'var(--primary)',
+                margin: '0 auto 1.25rem',
+              }}
+            >
+              <Construction size={30} />
+            </div>
+            <h2 style={{ fontSize: '1.3rem', fontWeight: 800, marginBottom: '0.5rem' }}>
+              Under Development
+            </h2>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
+              Reports & Analytics is currently being rebuilt. Check back soon.
+            </p>
+          </div>
+        </main>
       </div>
     </div>
   );
