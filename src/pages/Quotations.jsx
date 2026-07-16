@@ -10,32 +10,11 @@ import {
   Crosshair, Calculator, Printer
 } from 'lucide-react';
 import { supabase } from '../supabase';
+import { useCompanyConfig } from '../context/CompanySettingsContext';
 import html2pdf from 'html2pdf.js';
 import '../styles/quotations.css';
 
-const COMPANY_CONFIG = {
-  name:            'GreenSpire',
-  nameSuffix:      'Solutions',
-  tagline:         'Landscaping | Tree Planting | Garden Development',
-  logo: 'https://ik.imagekit.io/greenspire/GreenSpire%20Solutions%20/logo.png?updatedAt=1782207314550',
-  address:         'Shop No. 18, Shivkala Arcade, Tarapur Road, Boisar, Palghar - 401501, Maharashtra, India',
-  phone:           '808-095-6853',
-  email:           'greenspire.solutions23@gmail.com',
-  gstNumber:       '27FASPK9418R1ZF',
-  bank: {
-    bankName:  'ICICI BANK',
-    branch:    'ICIC0000063 (Boisar)',
-    accountNo: '006305008965',
-    vpa:       'greenspiresolutions.ibz@icici',
-  },
-  paymentTerms: [
-    '70% Advance at order confirmation',
-    'Remaining 30% on completion of work',
-  ],
-  termsAndConditions: [
-    'Late payments may result in a 2% penalty fee.',
-  ],
-};
+
 
 /* ── Constants ─────────────────────────────────────────── */
 const PROJECT_TYPES  = ['Residential', 'Commercial', 'Industrial', 'Maintenance', 'Plantation'];
@@ -60,19 +39,7 @@ const blankItem = () => ({
   gstPct:   18,
 });
 
-const BLANK_FORM = {
-  quotation_number: '', client_name: '', client_email: '', client_phone: '',
-  client_gst: '',
-  project_name: '', project_type: 'Residential', site_address: '',
-  map_location: '', plot_area: '',
-  start_date: '', completion_date: '',
-  scope_of_work: '',
-  validity_days: '30',
-  quotation_date: new Date().toISOString().split('T')[0],
-  notes: '',
-  payment_terms: COMPANY_CONFIG.paymentTerms.join('\n'),
-  terms_conditions: COMPANY_CONFIG.termsAndConditions.join('\n'),
-};
+
 
 // Area conversion — base unit: square feet (matches Projects.jsx)
 const AREA_UNITS = {
@@ -146,10 +113,47 @@ const genQuotationNumber = async (supabaseClient) => {
   return `${prefix}001`;
 };
 
+/* ── Auto invoice number — sequential within the FY ─── */
+const genInvoiceNumber = async (supabaseClient) => {
+  const fy     = getCurrentFY();
+  const prefix = `INV-${fy}-`;
+  try {
+    const { data } = await supabaseClient
+      .from('quotations')
+      .select('invoice_number')
+      .like('invoice_number', `${prefix}%`)
+      .order('invoice_number', { ascending: false })
+      .limit(1);
+
+    if (data && data.length > 0) {
+      const last    = data[0].invoice_number;
+      const lastNum = parseInt(last.replace(prefix, ''), 10);
+      const next    = isNaN(lastNum) ? 1 : lastNum + 1;
+      return `${prefix}${String(next).padStart(3, '0')}`;
+    }
+  } catch {/* fallthrough */}
+  return `${prefix}001`;
+};
+
 /* ═══════════════════════════════════════════════════════════
    COMPONENT
 ═══════════════════════════════════════════════════════════ */
 export default function Quotations() {
+  const COMPANY_CONFIG = useCompanyConfig();
+  const BLANK_FORM = {
+    quotation_number: '', client_name: '', client_email: '', client_phone: '',
+    client_gst: '',
+    project_name: '', project_type: 'Residential', site_address: '',
+    map_location: '', plot_area: '',
+    start_date: '', completion_date: '',
+    scope_of_work: '',
+    validity_days: '30',
+    quotation_date: new Date().toISOString().split('T')[0],
+    notes: '',
+    payment_terms: COMPANY_CONFIG.paymentTerms.join('\n'),
+    terms_conditions: COMPANY_CONFIG.termsAndConditions.join('\n'),
+  };
+
   const navigate                    = useNavigate();
   const [loading, setLoading]       = useState(true);
   const [quotations, setQuotations] = useState([]);
@@ -390,9 +394,12 @@ export default function Quotations() {
         .single();
       if (projErr) throw projErr;
 
+      const invNum = q.quotation_number
+        ? q.quotation_number.replace(/^QT-/, 'INV-')
+        : `INV-${q.id}`;
       const { error: qErr } = await supabase
         .from('quotations')
-        .update({ status: 'Approved', converted_project_id: proj.id, project_id: proj.id })
+        .update({ status: 'Approved', converted_project_id: proj.id, project_id: proj.id, invoice_number: invNum })
         .eq('id', q.id);
       if (qErr) throw qErr;
 
@@ -532,136 +539,9 @@ export default function Quotations() {
         </div>
       </div>`;
 
-    // ── Dynamic height-based pagination ──
-    // A4 at 96dpi = 1122px. We subtract a generous safety margin (48px)
-    // to account for sub-pixel rendering differences in html2pdf / chrome.
-    const A4_PX = 1122 - 48;   // 1074px effective page height
-    const ROW_SAFETY_PX = 8;   // extra pad per row
-
     const sandbox = document.createElement('div');
-    sandbox.style.cssText = [
-      'position:fixed', 'top:0', 'left:-9999px', 'z-index:-1',
-      'width:794px',
-      'visibility:hidden', 'pointer-events:none',
-      'font-family:Inter,Arial,sans-serif', 'font-size:12.5pt',
-    ].join(';');
+    sandbox.style.cssText = 'position:fixed;top:0;left:-9999px;z-index:-1;visibility:hidden;pointer-events:none;width:794px;';
     document.body.appendChild(sandbox);
-
-    const measureHTML = (html) => {
-      sandbox.innerHTML = html;
-      const el = sandbox.firstElementChild;
-      if (!el) return 0;
-      return el.getBoundingClientRect().height;
-    };
-
-    const realHeaderH = measureHTML(`<div style="width:794px"><div class="qtp-header" style="height:100px"></div></div>`);
-
-    const realInfoBandH = q.client_name || q.site_address || q.client_phone || q.client_email || clientGst || q.project_name || q.plot_area || q.start_date || q.completion_date
-      ? measureHTML(`<div>
-          <div class="qtp-info-band">
-            <div class="qtp-billed-col">
-              <div class="qtp-band-label">BILLED TO</div>
-              <div class="qtp-billed-name">${(q.client_name||'—').toUpperCase()}</div>
-              ${q.site_address?`<div class="qtp-billed-addr">${q.site_address}</div>`:''}
-              ${q.client_phone?`<div class="qtp-billed-contact">📞 ${q.client_phone}</div>`:''}
-              ${q.client_email?`<div class="qtp-billed-contact">✉ ${q.client_email}</div>`:''}
-              ${clientGst?`<div class="qtp-billed-gst">GST No.: ${clientGst}</div>`:''}
-            </div>
-            <div class="qtp-project-col">
-              <div class="qtp-band-label">PROJECT DETAILS</div>
-              ${q.project_name?`<div class="qtp-proj-row"><span class="qtp-proj-key">Project Name</span><span class="qtp-proj-val">${q.project_name}</span></div>`:''}
-              <div class="qtp-proj-row"><span class="qtp-proj-key">Project Type</span><span class="qtp-proj-val">${q.project_type||'—'}</span></div>
-              ${q.plot_area?`<div class="qtp-proj-row"><span class="qtp-proj-key">Plot Area</span><span class="qtp-proj-val">${Number(q.plot_area).toLocaleString('en-IN')} Sq.Ft</span></div>`:''}
-              ${q.start_date?`<div class="qtp-proj-row"><span class="qtp-proj-key">Start Date</span><span class="qtp-proj-val">${new Date(q.start_date).toLocaleDateString('en-GB')}</span></div>`:''}
-              ${q.completion_date?`<div class="qtp-proj-row"><span class="qtp-proj-key">Est. Completion</span><span class="qtp-proj-val">${new Date(q.completion_date).toLocaleDateString('en-GB')}</span></div>`:''}
-              ${q.validity_days?`<div class="qtp-proj-row"><span class="qtp-proj-key">Valid Until</span><span class="qtp-proj-val">${validUntilStr}</span></div>`:''}
-            </div>
-          </div>
-        </div>`)
-      : 0;
-
-    const scopeH = q.scope_of_work
-      ? measureHTML(`<div class="qtp-scope"><div class="qtp-section-head">Scope of Work</div><div class="qtp-scope-text">${q.scope_of_work}</div></div>`)
-      : 0;
-
-    const tableHeadH = measureHTML(`<table class="qtp-items-print-table" style="width:746px">${tableHead()}</table>`);
-    const sectionLabelH = measureHTML(`<div class="qtp-section-head" style="margin-bottom:12px">Bill of Quantities</div>`);
-
-    // Measure totals band (last page only — reserved together with bottomGridH as lastPageExtra)
-    const totalsBlockH = measureHTML(`
-      <div>
-        <div class="qtp-totals-band" style="margin:0 24px;">
-          <div class="qtp-amount-words"><span class="qtp-words-label">Amount in Words:</span><span class="qtp-words-text">${amountInWords}</span></div>
-          <table class="qtp-fin-table">
-            <tr><td class="fin-label">Subtotal</td><td class="fin-value">₹0.00</td></tr>
-            <tr><td class="fin-label">CGST</td><td class="fin-value">₹0.00</td></tr>
-            <tr><td class="fin-label">SGST</td><td class="fin-value">₹0.00</td></tr>
-            <tr class="qtp-fin-total"><td class="fin-label">GRAND TOTAL</td><td class="fin-value">₹0.00</td></tr>
-          </table>
-        </div>
-      </div>`);
-
-    // Bottom grid (payment terms + signature + T&C + validity + optional notes) — last page only
-    const bottomGridH = measureHTML(`
-      <div>
-        ${q.notes ? `<div class="qtp-notes-block"><div class="qtp-section-head">Notes</div><ul class="qtp-notes-list"><li>${q.notes}</li></ul></div>` : ''}
-        <div class="qtp-bottom-grid">
-          <div class="qtp-terms-left">
-            <div class="qtp-terms-section">
-              <div class="qtp-terms-head">Payment Terms</div>
-              ${(q.payment_terms || COMPANY_CONFIG.paymentTerms.join('\n'))
-                  .split('\n').filter(t => t.trim())
-                  .map((t, i) => `<div class="qtp-pay-term"><span class="qtp-term-num">${i + 1}</span><span>${t.trim()}</span></div>`).join('')}
-            </div>
-            <div class="qtp-terms-section">
-              <div class="qtp-terms-head">Terms &amp; Conditions</div>
-              ${(q.terms_conditions || COMPANY_CONFIG.termsAndConditions.join('\n'))
-                  .split('\n').filter(t => t.trim())
-                  .map(t => `<div class="qtp-tc-item">• ${t.trim()}</div>`).join('')}
-            </div>
-          </div>
-          <div class="qtp-sig-block">
-            <div class="qtp-sig-space"></div>
-            <div class="qtp-sig-bottom">
-              <div class="qtp-sig-line"></div>
-              <div class="qtp-sig-label-row">
-                <div class="qtp-sig-label">Authorised Signatory</div>
-                <div class="qtp-sig-company-name">${COMPANY_CONFIG.name} ${COMPANY_CONFIG.nameSuffix}</div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="qtp-validity-strip">Validity strip text goes here for measurement purposes</div>
-      </div>`) + 8; // +8px safety
-
-    // Footer is position:absolute — it doesn't take flow space, but qtp-page-body has
-    // padding-bottom:56px to prevent content sliding under it. Use 56px as the reserved height.
-    const pageFooterH = 56;
-    const contLabelH = measureHTML(`<div class="qtp-continuation-label">Bill of Quantities (continued)</div>`);
-
-    // Measure each item row individually
-    const itemRowHeights = allItemRows.map(rowHTML =>
-      measureHTML(`<table class="qtp-items-print-table" style="width:746px"><tbody>${rowHTML}</tbody></table>`) + ROW_SAFETY_PX
-    );
-
-    document.body.removeChild(sandbox);
-
-    // ── Pre-compute totals ──
-    const totalItemsH      = itemRowHeights.reduce((s, h) => s + h, 0);
-
-    // Chrome heights (fixed content per page type)
-    const p1Chrome         = realHeaderH + realInfoBandH + scopeH + sectionLabelH + tableHeadH + pageFooterH;
-    const contChrome       = realHeaderH + contLabelH + tableHeadH + pageFooterH;
-    const sigPageChrome    = realHeaderH + pageFooterH; // signature page has no items
-
-    // What fits on page 1 with totals included?
-    const p1WithTotals     = p1Chrome + totalItemsH + totalsBlockH;
-    // Does everything including signature fit on one page?
-    const everythingFits   = p1Chrome + totalItemsH + totalsBlockH + bottomGridH <= A4_PX;
-    // Do items+totals fit on page 1, but signature doesn't?
-    const totalsOnP1       = !everythingFits && p1WithTotals <= A4_PX;
-
-    // ── Reusable HTML snippets ──
 
     const pageHeaderFinal = (pageNum, total) => `
       <div class="qtp-header">
@@ -689,55 +569,92 @@ export default function Quotations() {
         </div>
       </div>`;
 
-    const totalsBandHTML = `
-      <div class="qtp-totals-band">
-        <div class="qtp-amount-words">
-          <span class="qtp-words-label">Amount in Words</span>
-          <span class="qtp-words-text">${amountInWords}</span>
+    const overflowsOnePage = (bodyHTML, pageNum, totalGuess) => {
+      sandbox.innerHTML = `<div class="qt-print-doc">${pageHeaderFinal(pageNum, totalGuess)}<div class="qtp-page-body">${bodyHTML}</div>${pageFooterHTML}</div>`;
+      const pageBody = sandbox.querySelector('.qtp-page-body');
+      if (!pageBody) return false;
+      // scrollHeight always reflects full content height regardless of overflow:hidden or flex-shrink
+      // This correctly detects overflow even when flex layout clips child elements visually
+      return pageBody.scrollHeight > pageBody.clientHeight;
+    };
+
+    const gstRowsHTML = `
+      <tr><td class="totals-label">CGST</td><td class="totals-value">₹${(totalGst / 2).toLocaleString('en-IN', {minimumFractionDigits:2})}</td></tr>
+      <tr><td class="totals-label">SGST</td><td class="totals-value">₹${(totalGst / 2).toLocaleString('en-IN', {minimumFractionDigits:2})}</td></tr>`;
+
+    const paymentTermsRaw  = q.payment_terms || COMPANY_CONFIG.paymentTerms.join('\n');
+    const termsRaw         = q.terms_conditions || COMPANY_CONFIG.termsAndConditions.join('\n');
+    const paymentTermsList = paymentTermsRaw.split('\n').map(t => t.trim()).filter(Boolean);
+    const termsList        = termsRaw.split('\n').map(t => t.trim()).filter(Boolean);
+
+    const paymentTermsInnerHTML = `
+      ${paymentTermsList.length ? `
+      <div class="qtp-terms-section">
+        <div class="qtp-terms-head">Payment Terms</div>
+        ${paymentTermsList.map((t, i) => `<div class="qtp-pay-term"><span class="qtp-term-num">${i + 1}</span><span>${t}</span></div>`).join('')}
+      </div>` : ''}
+      ${termsList.length ? `
+      <div class="qtp-terms-section">
+        <div class="qtp-terms-head">Terms &amp; Conditions</div>
+        ${termsList.map(t => `<div class="qtp-tc-item">• ${t}</div>`).join('')}
+      </div>` : ''}`;
+
+    const sigInnerHTML = `
+      <div class="qtp-sig-bottom">
+        <div class="qtp-sig-line"></div>
+        <div class="qtp-sig-label-row">
+          <div class="qtp-sig-label">Authorised Signatory</div>
+          <div class="qtp-sig-company-name">${COMPANY_CONFIG.name} ${COMPANY_CONFIG.nameSuffix}</div>
         </div>
-        <table class="qtp-fin-table">
-          <tr><td class="fin-label">Subtotal (excl. GST)</td><td class="fin-value">₹${subtotal.toLocaleString('en-IN', {minimumFractionDigits:2})}</td></tr>
-          <tr><td class="fin-label">CGST</td><td class="fin-value">₹${(totalGst / 2).toLocaleString('en-IN', {minimumFractionDigits:2})}</td></tr>
-          <tr><td class="fin-label">SGST</td><td class="fin-value">₹${(totalGst / 2).toLocaleString('en-IN', {minimumFractionDigits:2})}</td></tr>
-          <tr class="qtp-fin-total"><td class="fin-label">GRAND TOTAL</td><td class="fin-value">₹${grandTotal.toLocaleString('en-IN', {minimumFractionDigits:2})}</td></tr>
-        </table>
       </div>`;
 
-    const signatureSectionHTML = `
-      ${q.notes ? `
-      <div class="qtp-notes-block">
-        <div class="qtp-section-head">Notes</div>
-        <ul class="qtp-notes-list"><li>${q.notes.replace(/\n/g, '</li><li>')}</li></ul>
-      </div>` : ''}
-      <div class="qtp-bottom-grid">
-        <div class="qtp-terms-left">
-          <div class="qtp-terms-section">
-            <div class="qtp-terms-head">Payment Terms</div>
-            ${(q.payment_terms || COMPANY_CONFIG.paymentTerms.join('\n'))
-                .split('\n').filter(t => t.trim())
-                .map((t, i) => `<div class="qtp-pay-term"><span class="qtp-term-num">${i + 1}</span><span>${t.trim()}</span></div>`).join('')}
-          </div>
-          <div class="qtp-terms-section">
-            <div class="qtp-terms-head">Terms &amp; Conditions</div>
-            ${(q.terms_conditions || COMPANY_CONFIG.termsAndConditions.join('\n'))
-                .split('\n').filter(t => t.trim())
-                .map(t => `<div class="qtp-tc-item">• ${t.trim()}</div>`).join('')}
-          </div>
-        </div>
-        <div class="qtp-sig-block">
-          <div class="qtp-sig-space"></div>
-          <div class="qtp-sig-bottom">
-            <div class="qtp-sig-line"></div>
-            <div class="qtp-sig-label-row">
-              <div class="qtp-sig-label">Authorised Signatory</div>
-              <div class="qtp-sig-company-name">${COMPANY_CONFIG.name} ${COMPANY_CONFIG.nameSuffix}</div>
-            </div>
-          </div>
-        </div>
-      </div>
+    const validityStripHTML = `
       <div class="qtp-validity-strip">
         This quotation is valid until <strong>${validUntilStr}</strong>. Prices are subject to change after the validity period.
       </div>`;
+
+    const notesHTML = q.notes ? `<div class="qtp-notes-block" style="padding: 0; margin-top: 10px; page-break-inside: avoid;"><div class="qtp-section-head">Notes</div><ul class="qtp-notes-list"><li>${q.notes.replace(/\n/g,'</li><li>')}</li></ul></div>` : '';
+
+    const summaryLeftHTML = `
+      <div class="qtp-totals-words">Amount in Words: <strong>${amountInWords}</strong></div>
+      ${notesHTML}
+      <div class="qtp-summary-left-terms">${paymentTermsInnerHTML}</div>`;
+
+    const summaryRightHTML = `
+      <table class="qtp-totals-table">
+        <tbody>
+          <tr><td class="totals-label">Subtotal (excl. GST)</td><td class="totals-value">₹${subtotal.toLocaleString('en-IN',{minimumFractionDigits:2})}</td></tr>
+          ${gstRowsHTML}
+          <tr class="totals-grand-row"><td class="totals-label">GRAND TOTAL</td><td class="totals-value">₹${grandTotal.toLocaleString('en-IN',{minimumFractionDigits:2})}</td></tr>
+        </tbody>
+      </table>
+      <div class="qtp-sig-block">${sigInnerHTML}</div>`;
+
+    const summaryPreviewHTML = `
+      <div class="qtp-summary-row">
+        <div class="qtp-summary-left">
+          <div class="qtp-totals-words">Amount in Words: <strong>${amountInWords}</strong></div>
+        </div>
+        <div class="qtp-summary-right">
+          <table class="qtp-totals-table">
+            <tbody>
+              <tr><td class="totals-label">Subtotal (excl. GST)</td><td class="totals-value">₹${subtotal.toLocaleString('en-IN',{minimumFractionDigits:2})}</td></tr>
+              ${gstRowsHTML}
+              <tr class="totals-grand-row"><td class="totals-label">GRAND TOTAL</td><td class="totals-value">₹${grandTotal.toLocaleString('en-IN',{minimumFractionDigits:2})}</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>`;
+
+    const buildCombinedTail = (stretch) => `
+      <div class="qtp-summary-row"${stretch ? ' style="flex:1 1 auto"' : ''}>
+        <div class="qtp-summary-left">${summaryLeftHTML}</div>
+        <div class="qtp-summary-right">${summaryRightHTML}</div>
+      </div>
+      ${validityStripHTML}`;
+
+    const combinedTailHTML      = buildCombinedTail(false); 
+    const combinedTailHTMLFinal = buildCombinedTail(true);
 
     const clientInfoBandHTML = `
       <div class="qtp-info-band">
@@ -765,160 +682,109 @@ export default function Quotations() {
         <div class="qtp-scope-text">${q.scope_of_work}</div>
       </div>` : ''}`;
 
-    // ════════════════════════════════════════════════════
-    // SCENARIO 2 — everything (items + totals + signature) fits on page 1
-    // ════════════════════════════════════════════════════
-    if (everythingFits) {
-      return `<div class="qt-print-wrapper">
-        <div class="qt-print-doc">
-          ${pageHeaderFinal(1, 1)}
-          <div class="qtp-page-body">
-            ${clientInfoBandHTML}
-            <div class="qtp-financials">
-              <div class="qtp-section-head" style="margin-bottom:12px">Bill of Quantities</div>
-              <table class="qtp-items-print-table">
-                ${tableHead()}
-                <tbody>${allItemRows.join('')}</tbody>
-              </table>
-            </div>
-            ${totalsBandHTML}
-            ${signatureSectionHTML}
-          </div>
-          ${pageFooterHTML}
-        </div>
+    const itemsTableHTML = (rows) => `
+      <div class="qtp-financials">
+        <div class="qtp-section-head" style="margin-bottom:12px">Bill of Quantities</div>
+        <table class="qtp-items-print-table">
+          ${tableHead()}
+          <tbody>${rows.join('')}</tbody>
+        </table>
       </div>`;
+
+    const contItemsTableHTML = (rows, pageNum, totalPages) => `
+      <div class="qtp-financials qtp-financials-cont">
+        <div class="qtp-continuation-label">Bill of Quantities <span class="qtp-cont-page">(continued — page ${pageNum} of ${totalPages})</span></div>
+        <table class="qtp-items-print-table">
+          ${tableHead()}
+          <tbody>${rows.join('')}</tbody>
+        </table>
+      </div>`;
+
+    const summaryContChromeHTML = `<div class="qtp-financials qtp-financials-cont"><div class="qtp-continuation-label">Summary &amp; Authorisation</div></div>`;
+
+    const fullBodyHTMLTest = `${clientInfoBandHTML}${itemsTableHTML(allItemRows)}${combinedTailHTML}`;
+
+    if (!overflowsOnePage(fullBodyHTMLTest, 1, 1)) {
+      const fullBodyHTMLFinal = `${clientInfoBandHTML}${itemsTableHTML(allItemRows)}${combinedTailHTMLFinal}`;
+      document.body.removeChild(sandbox);
+      return `<div class="qt-print-wrapper"><div class="qt-print-doc">
+        ${pageHeaderFinal(1,1)}<div class="qtp-page-body">${fullBodyHTMLFinal}</div>${pageFooterHTML}</div></div>`;
     }
 
-    // ════════════════════════════════════════════════════
-    // SCENARIO 1 — items + totals fit on page 1, signature needs page 2
-    // ════════════════════════════════════════════════════
-    if (totalsOnP1) {
-      return `<div class="qt-print-wrapper">
-        <div class="qt-print-doc qtp-page-break">
-          ${pageHeaderFinal(1, 2)}
-          <div class="qtp-page-body">
-            ${clientInfoBandHTML}
-            <div class="qtp-financials">
-              <div class="qtp-section-head" style="margin-bottom:12px">Bill of Quantities</div>
-              <table class="qtp-items-print-table">
-                ${tableHead()}
-                <tbody>${allItemRows.join('')}</tbody>
-              </table>
-            </div>
-            ${totalsBandHTML}
-          </div>
-          ${pageFooterHTML}
-        </div>
-        <div class="qt-print-doc">
-          ${pageHeaderFinal(2, 2)}
-          <div class="qtp-page-body">
-            <div class="qtp-financials qtp-financials-cont">
-              <div class="qtp-continuation-label">Summary &amp; Authorisation</div>
-            </div>
-            ${totalsBandHTML}
-            ${signatureSectionHTML}
-          </div>
-          ${pageFooterHTML}
-        </div>
-      </div>`;
-    }
-
-    // ════════════════════════════════════════════════════
-    // SCENARIO 3 — items overflow across multiple pages
-    //
-    // Packing strategy (two-pass):
-    //
-    // Pass 1 — try to fit items + totals + signature all on the last item page.
-    //   • For each row, if it's the last row, reserve totalsBlockH + bottomGridH.
-    //   • If that fits → no extra page needed (sigFitsOnLastPage = true).
-    //
-    // Pass 2 — if signature didn't fit alongside totals, fall back: reserve
-    //   only totalsBlockH on the last item page, and add a dedicated sig page.
-    // ════════════════════════════════════════════════════
-
-    const packRows = (reserveOnLastRow) => {
-      const buckets = [];
-      let   bucket  = [];
-      let   used    = p1Chrome;
-
-      for (let i = 0; i < itemRowHeights.length; i++) {
-        const rowH      = itemRowHeights[i];
-        const isLastRow = i === itemRowHeights.length - 1;
-        const needed    = isLastRow ? rowH + reserveOnLastRow : rowH;
-
-        if (used + needed <= A4_PX || bucket.length === 0) {
-          bucket.push(allItemRows[i]);
-          used += rowH;
-        } else {
-          buckets.push({ rows: bucket, usedPx: used });
-          bucket = [allItemRows[i]];
-          used   = contChrome + rowH;
+    const itemBuckets = [];
+    {
+      let remaining = allItemRows.slice();
+      let pageNum = 1;
+      while (remaining.length > 0) {
+        const isFirst = pageNum === 1;
+        let rows = [];
+        for (let i = 0; i < remaining.length; i++) {
+          const candidate = [...rows, remaining[i]];
+          const candidateBody = isFirst
+            ? `${clientInfoBandHTML}${itemsTableHTML(candidate)}`
+            : contItemsTableHTML(candidate, pageNum, 99);
+          if (rows.length === 0 || !overflowsOnePage(candidateBody, pageNum, 99)) {
+            rows = candidate;
+          } else {
+            break;
+          }
         }
+        if (rows.length === 0) rows = [remaining[0]]; 
+        itemBuckets.push(rows);
+        remaining = remaining.slice(rows.length);
+        pageNum++;
       }
-      if (bucket.length > 0) buckets.push({ rows: bucket, usedPx: used });
-      if (buckets.length === 0) buckets.push({ rows: [], usedPx: p1Chrome });
-      return buckets;
-    };
+      if (itemBuckets.length === 0) itemBuckets.push([]);
+    }
 
-    // Pass 1 — attempt to place totals + signature on the last item page
-    const bucketsWithSig = packRows(totalsBlockH + bottomGridH);
-    const lastBucketWithSig = bucketsWithSig[bucketsWithSig.length - 1];
-    const sigFitsOnLastPage =
-      lastBucketWithSig.usedPx + totalsBlockH + bottomGridH <= A4_PX;
+    const lastBucketIdx = itemBuckets.length - 1;
+    const isLastBucketFirstPage = lastBucketIdx === 0;
+    const lastPageItemsHTML = isLastBucketFirstPage
+      ? `${clientInfoBandHTML}${itemsTableHTML(itemBuckets[lastBucketIdx])}`
+      : contItemsTableHTML(itemBuckets[lastBucketIdx], lastBucketIdx + 1, 99);
 
-    // Use the appropriate pack based on whether sig fits
-    const itemPageBuckets = sigFitsOnLastPage
-      ? bucketsWithSig.map(b => b.rows)
-      : packRows(totalsBlockH).map(b => b.rows);
+    const candidateLastPageWithTail = `${lastPageItemsHTML}${combinedTailHTML}`;
+    const tailFitsOnItemsPage = !overflowsOnePage(candidateLastPageWithTail, lastBucketIdx + 1, 99);
 
-    const needsSigPage  = !sigFitsOnLastPage;
-    const totalPages    = itemPageBuckets.length + (needsSigPage ? 1 : 0);
+    let duplicateSummaryOnItemsPage = false;
+    if (!tailFitsOnItemsPage) {
+      const previewCandidate = `${lastPageItemsHTML}${summaryPreviewHTML}`;
+      duplicateSummaryOnItemsPage = !overflowsOnePage(previewCandidate, lastBucketIdx + 1, 99);
+    }
 
-    const itemPageDivs = itemPageBuckets.map((rows, idx) => {
-      const pageNum  = idx + 1;
-      const isFirst  = pageNum === 1;
-      const isLastIP = pageNum === itemPageBuckets.length; // last item page gets totals
+    const lastPageTailHTML = tailFitsOnItemsPage
+      ? combinedTailHTMLFinal
+      : (duplicateSummaryOnItemsPage ? summaryPreviewHTML : '');
 
-      const contLabel = !isFirst
-        ? `<div class="qtp-continuation-label">Bill of Quantities <span class="qtp-cont-page">(continued — page ${pageNum} of ${totalPages})</span></div>`
-        : '';
+    const extraPageTailHTML = tailFitsOnItemsPage
+      ? ''
+      : combinedTailHTMLFinal;
 
-      // Last item page: always show totals.
-      // Also show signature here if it fits (sigFitsOnLastPage).
-      return `
-        <div class="qt-print-doc${needsSigPage || !isLastIP ? ' qtp-page-break' : ''}">
-          ${pageHeaderFinal(pageNum, totalPages)}
-          <div class="qtp-page-body">
-            ${isFirst ? clientInfoBandHTML : ''}
-            <div class="qtp-financials${isFirst ? '' : ' qtp-financials-cont'}">
-              ${isFirst ? '<div class="qtp-section-head" style="margin-bottom:12px">Bill of Quantities</div>' : contLabel}
-              <table class="qtp-items-print-table">
-                ${tableHead()}
-                <tbody>${rows.join('')}</tbody>
-              </table>
-            </div>
-            ${isLastIP ? totalsBandHTML : ''}
-            ${isLastIP && sigFitsOnLastPage ? signatureSectionHTML : ''}
-          </div>
-          ${pageFooterHTML}
-        </div>`;
+    const needsExtraPage = !!extraPageTailHTML;
+
+    document.body.removeChild(sandbox);
+
+    const totalPages = itemBuckets.length + (needsExtraPage ? 1 : 0);
+
+    const itemPageDivs = itemBuckets.map((rows, idx) => {
+      const pageNum = idx + 1;
+      const isFirst = pageNum === 1;
+      const isLastItemsPage = pageNum === itemBuckets.length;
+      const isLastPageOverall = isLastItemsPage && !needsExtraPage;
+      return `<div class="qt-print-doc${isLastPageOverall ? '' : ' qtp-page-break'}">
+        ${pageHeaderFinal(pageNum, totalPages)}<div class="qtp-page-body">
+        ${isFirst ? `${clientInfoBandHTML}${itemsTableHTML(rows)}` : contItemsTableHTML(rows, pageNum, totalPages)}
+        ${isLastItemsPage ? lastPageTailHTML : ''}
+        </div>${pageFooterHTML}</div>`;
     });
 
-    // Only add a dedicated signature page when signature didn't fit on the last item page
-    const signaturePage = needsSigPage ? `
-      <div class="qt-print-doc">
-        ${pageHeaderFinal(totalPages, totalPages)}
-        <div class="qtp-page-body">
-          <div class="qtp-financials qtp-financials-cont">
-            <div class="qtp-continuation-label">Summary &amp; Authorisation</div>
-          </div>
-          ${totalsBandHTML}
-          ${signatureSectionHTML}
-        </div>
-        ${pageFooterHTML}
-      </div>` : '';
+    const extraTailPageDiv = needsExtraPage ? `<div class="qt-print-doc">
+      ${pageHeaderFinal(totalPages, totalPages)}<div class="qtp-page-body">
+      ${summaryContChromeHTML}
+      ${extraPageTailHTML}
+      </div>${pageFooterHTML}</div>` : '';
 
-    return `<div class="qt-print-wrapper">${itemPageDivs.join('')}${signaturePage}</div>`;
+    return `<div class="qt-print-wrapper">${itemPageDivs.join('')}${extraTailPageDiv}</div>`;
   };
 
   /* ── Share: Print → Save as PDF (browser dialog, no extra deps) ── */
@@ -1666,11 +1532,11 @@ export default function Quotations() {
               You'll be redirected to the Projects page.
             </p>
             <div className="qt-approve-btns">
-              <button className="btn-secondary" style={{ flex: 1 }} onClick={() => setApproveTarget(null)} disabled={approving}>
+              <button className="btn-secondary" style={{ flex: 1, textAlign: 'center', justifyContent: 'center' }} onClick={() => setApproveTarget(null)} disabled={approving}>
                 Cancel
               </button>
               <button className="btn-approve" onClick={handleApprove} disabled={approving}>
-                {approving ? 'Converting…' : 'Yes, Approve & Convert'}
+                {approving ? 'Approving…' : 'Approve'}
               </button>
             </div>
           </div>

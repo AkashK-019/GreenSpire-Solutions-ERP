@@ -28,21 +28,19 @@ import '../styles/projectDetail.css';
 const STATUS_OPTIONS = ['Active', 'Completed', 'Pending', 'On Hold'];
 
 const TABS = [
-  { name: 'Overview',            icon: LayoutDashboard, component: TabOverview,          category: 'Project Operations' },
-  { name: 'Execution Scope',     icon: ClipboardList,   component: TabExecutionScope,     category: 'Project Operations' },
-  { name: 'Design Layouts',      icon: Compass,         component: TabDesignLayouts,      category: 'Project Operations' },
-  { name: 'Schedule',            icon: Calendar,        component: TabSchedule,           category: 'Project Operations' },
-  { name: 'Site Visits',         icon: MapPin,          component: TabSiteVisits,         category: 'Project Operations' },
-  { name: 'Quotations',          icon: FileSignature,   component: TabQuotations,         category: 'Billing & Commercials' },
-  { name: 'Contracts',           icon: Handshake,       component: TabContracts,          category: 'Billing & Commercials' },
-  { name: 'Invoices',            icon: Receipt,         component: TabInvoices,           category: 'Billing & Commercials' },
-  { name: 'Documents',           icon: Files,           component: TabDocuments,          category: 'Billing & Commercials' },
-  { name: 'Resources',           icon: Boxes,           component: TabResources,          category: 'Resources & Ledger' },
-  { name: 'Team',                icon: Users,           component: TabTeam,               category: 'Resources & Ledger' },
-  { name: 'Finance',             icon: Coins,           component: TabFinance,            category: 'Resources & Ledger' },
+  { name: 'Overview',            icon: LayoutDashboard, component: TabOverview },
+  { name: 'Quotations',          icon: FileSignature,   component: TabQuotations },
+  { name: 'Invoices',            icon: Receipt,         component: TabInvoices },
+  { name: 'Documents',           icon: Files,           component: TabDocuments },
+  { name: 'Finance',             icon: Coins,           component: TabFinance },
+  { name: 'Execution Scope',     icon: ClipboardList,   component: TabExecutionScope },
+  { name: 'Design Layouts',      icon: Compass,         component: TabDesignLayouts },
+  { name: 'Schedule',            icon: Calendar,        component: TabSchedule },
+  { name: 'Site Visits',         icon: MapPin,          component: TabSiteVisits },
+  { name: 'Contracts',           icon: Handshake,       component: TabContracts },
+  { name: 'Resources',           icon: Boxes,           component: TabResources },
+  { name: 'Team',                icon: Users,           component: TabTeam },
 ];
-
-const CATEGORIES = ['Project Operations', 'Billing & Commercials', 'Resources & Ledger'];
 
 const STATUS_CONFIG = {
   Active:     { color: '#10b981', bg: '#ecfdf5' },
@@ -184,26 +182,18 @@ export default function ProjectDetail() {
 
             {/* Left tab menu */}
             <aside className="pd-tab-menu">
-              {CATEGORIES.map(cat => {
-                const catTabs = TABS.filter(t => t.category === cat);
+              {TABS.map(tab => {
+                const Icon = tab.icon;
+                const isActive = activeTab === tab.name;
                 return (
-                  <div key={cat} className="pd-tab-group">
-                    <div className="pd-tab-group-label">{cat}</div>
-                    {catTabs.map(tab => {
-                      const Icon = tab.icon;
-                      const isActive = activeTab === tab.name;
-                      return (
-                        <button
-                          key={tab.name}
-                          onClick={() => setActiveTab(tab.name)}
-                          className={`pd-tab-btn ${isActive ? 'active' : ''}`}
-                        >
-                          <Icon size={14} className="pd-tab-icon" />
-                          <span>{tab.name}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
+                  <button
+                    key={tab.name}
+                    onClick={() => setActiveTab(tab.name)}
+                    className={`pd-tab-btn ${isActive ? 'active' : ''}`}
+                  >
+                    <Icon size={14} className="pd-tab-icon" />
+                    <span>{tab.name}</span>
+                  </button>
                 );
               })}
             </aside>

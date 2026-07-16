@@ -1,52 +1,49 @@
+import { Handshake } from 'lucide-react';
 
-import { Construction } from 'lucide-react';
-
-export default function Reports() {
+export default function TabContracts({ project }) {
   return (
-    <div style={{ display: 'flex', minHeight: '100vh' }}>
-      <Sidebar />
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-        <Header title="Reports" />
-        <main
-          className="main-content animate-fade"
-          style={{
-            display: 'flex',
-            flex: 1,
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <div
-            className="stat-card"
-            style={{
-              padding: '3rem 2.5rem',
-              textAlign: 'center',
-              maxWidth: '420px',
-            }}
-          >
-            <div
-              style={{
-                width: '64px',
-                height: '64px',
-                borderRadius: '16px',
-                background: '#f1f5f9',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: 'var(--primary)',
-                margin: '0 auto 1.25rem',
-              }}
-            >
-              <Construction size={30} />
-            </div>
-            <h2 style={{ fontSize: '1.3rem', fontWeight: 800, marginBottom: '0.5rem' }}>
-              Under Development
-            </h2>
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
-              Reports & Analytics is currently being rebuilt. Check back soon.
-            </p>
-          </div>
-        </main>
+    <div className="animate-fade">
+      <div className="tab-page-head">
+        <div>
+          <h2 className="tab-page-title">Contracts</h2>
+          <p className="tab-page-sub">Manage and sign agreements for {project?.name || 'the project'}.</p>
+        </div>
+      </div>
+      
+      <div 
+        className="tab-card" 
+        style={{ 
+          display: 'flex', 
+          flexDirection: 'column', 
+          alignItems: 'center', 
+          justifyContent: 'center', 
+          padding: '4rem 2rem',
+          textAlign: 'center',
+          background: 'white',
+          border: '1px solid #e9eef3',
+          borderRadius: '14px',
+          marginTop: '1.5rem'
+        }}
+      >
+        <div style={{
+          width: '64px',
+          height: '64px',
+          borderRadius: '16px',
+          background: '#ecfdf5',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: '#10b981',
+          marginBottom: '1.25rem'
+        }}>
+          <Handshake size={32} />
+        </div>
+        <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#0b3d27', marginBottom: '0.5rem', fontFamily: 'Outfit, sans-serif' }}>
+          Under Development
+        </h3>
+        <p style={{ color: '#64748b', fontSize: '0.9rem', maxWidth: '380px', lineHeight: 1.5, fontFamily: 'Inter, sans-serif' }}>
+          The Contracts management module is currently under development. Please check back later.
+        </p>
       </div>
     </div>
   );
