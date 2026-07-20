@@ -11,7 +11,6 @@ import { supabase } from '../supabase';
 import '../index.css';
 import '../styles/Inventory.css';
 
-/* ─── constants ─── */
 const MAIN_TABS  = ['Plants', 'Materials'];
 const MAT_SUBTABS = ['All', 'Fertilizers', 'Irrigation', 'Tools', 'Aggregates', 'Others'];
 
@@ -178,7 +177,6 @@ useEffect(() => {
     setShowPicker(false); setShowForm(false); setEditItem(null); setForm(EMPTY_FORM);
   };
 
-    /* ── save ── */
   const handleSave = async e => {
     e.preventDefault();
     setSaving(true);
@@ -245,7 +243,6 @@ useEffect(() => {
     } finally { setSaving(false); }
   };
 
-  /* ── delete ── */
   const doDelete = async item => {
     try {
       const tbl = item.type==='plant' ? 'plants_inventory' : 'materials_inventory';
@@ -257,7 +254,6 @@ useEffect(() => {
     finally { setConfirmDel(null); }
   };
 
-  /* ── export CSV ── */
   const exportCSV = () => {
     const rows = [
       ['Name','Sub / Botanical','Category','Unit','Stock','Min Stock','Unit Cost','Total Value','Supplier','Status'],
@@ -280,7 +276,6 @@ useEffect(() => {
 
   const activeStats = mainTab === 'Plants' ? statsPlants : statsMats;
 
-  /* ════════════ RENDER ════════════ */
   return (
     <div className="inv-layout">
       <Sidebar/>

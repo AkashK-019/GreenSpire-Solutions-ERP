@@ -1,11 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;600;700;800&display=swap');
 
-/* ══════════════════════════════════════════════════════════════
-   FINANCE PAGE  —  GreenSpire Solutions
-   Fully responsive: mobile / tablet / desktop
-══════════════════════════════════════════════════════════════ */
-
-/* ── Layout ── */
 .fn-layout {
   display: flex;
   min-height: 100vh;
@@ -20,7 +14,6 @@
   overflow: hidden;
 }
 
-/* ── Main content area ── */
 .main-content {
   flex: 1;
   padding: 1.75rem 2rem 3rem;
@@ -28,7 +21,6 @@
   min-width: 0;
 }
 
-/* ── Animations ── */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: none; }
@@ -38,9 +30,6 @@
 @keyframes db-spin { to { transform: rotate(360deg); } }
 .db-spin { animation: db-spin 1s linear infinite; }
 
-/* ═══════════════════════════════════════════════════════════
-   PAGE HEADER
-═══════════════════════════════════════════════════════════ */
 .projects-header-bar {
   display: flex;
   align-items: flex-start;
@@ -65,9 +54,6 @@
   margin: 0;
 }
 
-/* ═══════════════════════════════════════════════════════════
-   STAT CARDS
-═══════════════════════════════════════════════════════════ */
 .fn-metrics {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -130,9 +116,6 @@
 .fn-stat-val.expense { color: #ef4444; }
 .fn-stat-val.balance { color: #0b3d27; }
 
-/* ═══════════════════════════════════════════════════════════
-   TOOLBAR
-═══════════════════════════════════════════════════════════ */
 .fn-toolbar {
   display: flex;
   align-items: center;
@@ -202,9 +185,6 @@
   font-weight: 600;
 }
 
-/* ═══════════════════════════════════════════════════════════
-   LEDGER TABLE
-═══════════════════════════════════════════════════════════ */
 .fn-table-wrap {
   background: #fff;
   border: 1px solid #e9eef3;
@@ -223,7 +203,6 @@
   width: 100%;
   border-collapse: collapse;
   font-size: .875rem;
-  /* no min-width — let it be fluid, columns handle their own sizing */
 }
 
 .fn-table thead tr { background: #f8fafc; }
@@ -240,14 +219,13 @@
   white-space: nowrap;
 }
 
-/* column width hints so nothing gets squished */
-.fn-table th:nth-child(1) { min-width: 140px; }  /* Transaction Details */
-.fn-table th:nth-child(2) { min-width: 80px;  }  /* Type */
-.fn-table th:nth-child(3) { min-width: 110px; }  /* Project Ref */
-.fn-table th:nth-child(4) { min-width: 100px; }  /* Amount */
-.fn-table th:nth-child(5) { min-width: 90px;  }  /* Date */
-.fn-table th:nth-child(6) { min-width: 110px; }  /* Payment */
-.fn-table th:nth-child(7) { min-width: 50px; width: 50px; } /* Delete */
+.fn-table th:nth-child(1) { min-width: 140px; } 
+.fn-table th:nth-child(2) { min-width: 80px;  } 
+.fn-table th:nth-child(3) { min-width: 110px; }  
+.fn-table th:nth-child(4) { min-width: 100px; }  
+.fn-table th:nth-child(5) { min-width: 90px;  } 
+.fn-table th:nth-child(6) { min-width: 110px; }  
+.fn-table th:nth-child(7) { min-width: 50px; width: 50px; } 
 
 .fn-table td {
   padding: .85rem 1rem;
@@ -260,7 +238,6 @@
 .fn-table tbody tr:nth-child(even) td { background: #fafbfc; }
 .fn-table tbody tr:hover td { background: #f0fdf4; }
 
-/* ── Table cells ── */
 .fn-tx-name {
   font-size: .88rem;
   font-weight: 600;
@@ -324,7 +301,6 @@
   font-family: 'Inter', monospace;
 }
 
-/* ── Delete button ── */
 .fn-delete-btn {
   width: 30px;
   height: 30px;
@@ -346,7 +322,6 @@
   color: #ef4444;
 }
 
-/* ── Mobile card list (shown on small screens) ── */
 .fn-card-list {
   display: none;
   flex-direction: column;
@@ -387,7 +362,6 @@
   justify-content: flex-end;
 }
 
-/* ── Loading / empty ── */
 .fn-loading {
   display: flex;
   align-items: center;
@@ -407,9 +381,6 @@
   text-align: center;
 }
 
-/* ═══════════════════════════════════════════════════════════
-   DELETE CONFIRM MODAL
-═══════════════════════════════════════════════════════════ */
 .confirm-modal {
   background: #fff;
   border-radius: 14px;
@@ -478,9 +449,6 @@
   transform: translateY(-1px);
 }
 
-/* ═══════════════════════════════════════════════════════════
-   RECORD TRANSACTION MODAL
-═══════════════════════════════════════════════════════════ */
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -587,9 +555,6 @@
   background: #fff;
 }
 
-/* ═══════════════════════════════════════════════════════════
-   FORM ELEMENTS
-═══════════════════════════════════════════════════════════ */
 .form-group {
   display: flex;
   flex-direction: column;
@@ -667,22 +632,15 @@
 
 .btn-secondary:hover { background: #e2e8f0; }
 
-/* ═══════════════════════════════════════════════════════════
-   RESPONSIVE BREAKPOINTS
-═══════════════════════════════════════════════════════════ */
-
-/* ── Large desktop (≥ 1280px) ── */
 @media (min-width: 1280px) {
   .main-content { padding: 2rem 2.5rem 3rem; }
 }
 
-/* ── Tablet landscape (≤ 1100px) ── */
 @media (max-width: 1100px) {
   .fn-stat-lbl { font-size: .67rem; }
   .fn-stat-val { font-size: 1.25rem; }
 }
 
-/* ── Tablet portrait / iPad (≤ 900px) ── */
 @media (max-width: 900px) {
   .main-content { padding: 1.25rem 1.25rem 2.5rem; }
 
@@ -692,7 +650,6 @@
   .fn-stat-val  { font-size: 1.15rem; }
   .fn-stat-lbl  { font-size: .65rem; }
 
-  /* Table: allow horizontal scroll — force min-width so all cols show */
   .fn-table { min-width: 700px; }
 
   .modal-content { max-width: calc(100vw - 2rem); }
@@ -701,23 +658,19 @@
   .modal-footer  { padding: .85rem 1.2rem; }
 }
 
-/* ── Medium tablet / large phone (≤ 768px) ── */
 @media (max-width: 768px) {
   .main-content { padding: 1rem 1rem 2rem; }
   .projects-header-bar h1 { font-size: 1.3rem; }
 
-  /* Stats 2-col, balance card full width */
   .fn-metrics { grid-template-columns: repeat(2, 1fr); gap: .65rem; }
   .fn-metrics .stat-card:nth-child(3) { grid-column: 1 / -1; }
 
   .fn-search-wrap { max-width: 100%; }
 }
 
-/* ── Mobile (≤ 650px) ── */
 @media (max-width: 650px) {
   .main-content { padding: .85rem .85rem 2rem; }
 
-  /* Header stacks */
   .projects-header-bar {
     flex-direction: column;
     align-items: stretch;
@@ -729,23 +682,19 @@
     justify-content: center;
   }
 
-  /* Stats 1-col */
   .fn-metrics { grid-template-columns: 1fr; gap: .55rem; margin-bottom: 1.25rem; }
   .fn-metrics .stat-card:nth-child(3) { grid-column: auto; }
   .stat-card  { padding: .85rem 1rem; }
   .fn-stat-val { font-size: 1.25rem; }
 
-  /* Toolbar stacks */
   .fn-toolbar { flex-direction: column; align-items: stretch; gap: .6rem; margin-bottom: 1rem; }
   .fn-search-wrap { max-width: 100%; min-width: 0; }
   .fn-filters { justify-content: flex-start; gap: 6px; }
   .fn-filter-btn { flex: 1; text-align: center; }
 
-  /* Hide table, show cards */
   .fn-table-scroll { display: none; }
   .fn-card-list { display: flex; }
 
-  /* Modal slides up from bottom */
   .modal-overlay { padding: .6rem; align-items: flex-end; }
   .modal-content {
     max-width: 100%;
@@ -765,14 +714,12 @@
   .modal-footer .btn-primary { width: 100%; justify-content: center; }
   .modal-form-2col { grid-template-columns: 1fr; gap: .75rem; }
 
-  /* Confirm modal */
   .confirm-modal { padding: 1.25rem; }
   .confirm-modal-actions { flex-direction: column-reverse; }
   .confirm-modal-actions .btn-secondary,
   .confirm-modal-actions .btn-danger { width: 100%; justify-content: center; }
 }
 
-/* ── Very small phones (≤ 380px) ── */
 @media (max-width: 380px) {
   .main-content { padding: .7rem .7rem 1.5rem; }
   .fn-stat-val  { font-size: 1.1rem; }

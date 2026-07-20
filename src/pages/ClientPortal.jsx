@@ -25,7 +25,6 @@ export default function ClientPortal() {
   const fetchClientData = async () => {
     setLoading(true);
     try {
-      // Find client's project. Look up projects by client_email first
       let { data: clientProjects, error: pError } = await supabase
         .from('projects')
         .select('*')
@@ -33,7 +32,6 @@ export default function ClientPortal() {
 
       if (pError) throw pError;
 
-      // If not found by client_email, check if they are in project_team
       if (!clientProjects || clientProjects.length === 0) {
         const { data: teamAssigns } = await supabase
           .from('project_team')
@@ -49,7 +47,6 @@ export default function ClientPortal() {
         const activeProj = clientProjects[0];
         setProject(activeProj);
 
-        // Fetch drawings
         const { data: dwgData, error: dwgError } = await supabase
           .from('site_drawings')
           .select('*')
@@ -59,7 +56,6 @@ export default function ClientPortal() {
         if (dwgError) throw dwgError;
         setDrawings(dwgData || []);
 
-        // Fetch invoices
         const { data: invData, error: invError } = await supabase
           .from('invoices')
           .select('*')
@@ -69,7 +65,6 @@ export default function ClientPortal() {
         if (invError) throw invError;
         setInvoices(invData || []);
 
-        // Fetch progress based on completed schedule stages
         const { data: stages } = await supabase
           .from('schedule_stages')
           .select('status')
@@ -79,7 +74,7 @@ export default function ClientPortal() {
           const completed = stages.filter(s => s.status === 'Completed').length;
           setProgress(Math.round((completed / stages.length) * 100));
         } else {
-          setProgress(30); // fallback default progress
+          setProgress(30); 
         }
       }
     } catch (err) {

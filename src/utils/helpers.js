@@ -51,9 +51,9 @@ export function formatDate(dateStr) {
 
 /**
  * Calculates GST components for bills and quotations.
- * @param {number} amount - Base amount
- * @param {number} [percent=18] - GST Percentage
- * @returns {object} - Object containing base, gst, and total amount
+ * @param {number} amount 
+ * @param {number} [percent=18] 
+ * @returns {object} 
  */
 export function calculateGST(amount, percent = 18) {
   const base = parseFloat(amount) || 0;

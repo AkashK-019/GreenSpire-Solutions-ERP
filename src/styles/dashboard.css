@@ -1,6 +1,3 @@
-/* ══════════════════════════════════════════
-   DASHBOARD
-══════════════════════════════════════════ */
 
 .db-layout {
   display: flex;
@@ -21,7 +18,6 @@
   overflow-y: auto;
 }
 
-/* ── Greeting ── */
 .db-greeting-row {
   display: flex;
   align-items: flex-start;
@@ -73,7 +69,6 @@
   cursor: not-allowed;
 }
 
-/* ── Hero KPI row ── */
 .db-hero-row {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
@@ -82,7 +77,6 @@
   align-items: start;
 }
 
-/* Hero cards */
 .db-hero-card {
   background: white;
   border: 1px solid #e9eef3;
@@ -174,7 +168,6 @@
   margin-top: 4px;
 }
 
-/* Small KPI 2x2 grid */
 .db-small-kpi-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -228,7 +221,6 @@
   line-height: 1.3;
 }
 
-/* ── Lower section ── */
 .db-lower {
   display: grid;
   grid-template-columns: 1fr 280px;
@@ -236,7 +228,6 @@
   gap: 1.25rem;
 }
 
-/* Card base */
 .db-card {
   background: white;
   border: 1px solid #e9eef3;
@@ -281,7 +272,6 @@
 
 .db-see-all:hover { color: #0b3d27; }
 
-/* Loading / empty states */
 .db-loading-state {
   display: flex;
   align-items: center;
@@ -297,14 +287,12 @@
   text-align: center;
 }
 
-/* ── List shared ── */
 .db-list {
   list-style: none;
   padding: 0;
   margin: 0;
 }
 
-/* ── Project rows ── */
 .db-project-row {
   display: flex;
   align-items: center;
@@ -371,7 +359,6 @@
   letter-spacing: 0.04em;
 }
 
-/* ── Donut card ── */
 .db-donut-card {
   grid-row: span 2;
 }
@@ -425,7 +412,6 @@
   font-weight: 700;
 }
 
-/* ── Transaction rows ── */
 .db-tx-card {
   grid-column: 1;
 }
@@ -475,7 +461,6 @@
   flex-shrink: 0;
 }
 
-/* ── Spinner ── */
 .db-spin {
   animation: db-rotate 0.8s linear infinite;
 }
@@ -484,7 +469,6 @@
   to { transform: rotate(360deg); }
 }
 
-/* ── Responsive ── */
 @media (max-width: 1200px) {
   .db-hero-row {
     grid-template-columns: 1fr 1fr;
@@ -534,10 +518,6 @@
     flex-direction: column;
   }
 }
-
-/* ══════════════════════════════════════════
-   RICH PROJECT CARDS
-══════════════════════════════════════════ */
 
 .db-card-desc {
   font-size: 0.72rem;
@@ -672,10 +652,6 @@
   opacity: 0;
   transition: all 0.15s ease;
 }
-
-/* ══════════════════════════════════════════
-   RICH TRANSACTION ROWS
-══════════════════════════════════════════ */
 
 .db-tx-list {
   display: flex;

@@ -16,12 +16,10 @@
   --rl:           13px;
 }
 
-/* ── Layout ── */
 .inv-layout { display:flex; min-height:100vh; background:var(--c-bg); }
 .inv-right  { flex:1; display:flex; flex-direction:column; min-width:0; }
 .inv-main   { flex:1; padding:1.75rem 1.75rem 3rem; overflow-y:auto; }
 
-/* ── Page head ── */
 .inv-page-head {
   display:flex; align-items:center; justify-content:space-between;
   gap:1rem; margin-bottom:1.5rem; flex-wrap:wrap;
@@ -34,7 +32,6 @@
 
 .inv-head-right { display:flex; align-items:center; gap:0.55rem; flex-wrap:wrap; }
 
-/* search */
 .inv-search-wrap {
   position:relative; display:flex; align-items:center; width:210px;
 }
@@ -70,23 +67,11 @@
 }
 .inv-add-btn:hover { background:var(--c-green-mid); }
 
-/* ══════════════════════════════════════════
-   TOOLBAR ROW
-   View switcher (left) + page actions (right),
-   pinned to opposite ends so they read as two
-   separate groups instead of one button cluster.
-══════════════════════════════════════════ */
 .inv-toolbar-row {
   display:flex; align-items:center; justify-content:space-between;
   gap:1.25rem; margin-bottom:1.1rem; flex-wrap:wrap;
 }
 
-/* ══════════════════════════════════════════
-   MAIN TAB SWITCHER  (Plants / Materials)
-   Styled as a segmented control inside its own
-   track, so it doesn't read as just more buttons
-   sitting next to Export / Add Item.
-══════════════════════════════════════════ */
 .inv-main-tabs {
   display:flex; gap:0.3rem; flex-shrink:0;
   background:#edf1ef; padding:0.3rem; border-radius:11px;
@@ -128,9 +113,6 @@
   background:var(--c-red-soft); color:var(--c-red);
 }
 
-/* ══════════════════════════════════════════
-   STATS ROW
-══════════════════════════════════════════ */
 .inv-stats-row {
   display:grid; grid-template-columns:repeat(4,1fr);
   gap:0.75rem; margin-bottom:1.1rem;
@@ -150,9 +132,6 @@
 .isc-green { color:var(--c-green); }
 .isc-red   { color:var(--c-red); }
 
-/* ══════════════════════════════════════════
-   MATERIAL SUB-TABS
-══════════════════════════════════════════ */
 .inv-sub-tabs {
   display:flex; align-items:flex-end; gap:0;
   border-bottom:2px solid var(--c-border);
@@ -182,15 +161,11 @@
 }
 .inv-sub-tab.active .ist-pill { background:var(--c-green-soft); color:var(--c-green); }
 
-/* ══════════════════════════════════════════
-   TABLE CARD
-══════════════════════════════════════════ */
 .inv-table-card {
   background:var(--c-white); border:1px solid var(--c-border);
   border-top:none; border-radius:0 0 var(--rl) var(--rl); overflow:hidden;
 }
 
-/* when sub-tabs are NOT showing (Plants tab), table card has full radius */
 .inv-main-tab.active[data-tab="Plants"] ~ .inv-table-card,
 .inv-table-card-full {
   border-top:1px solid var(--c-border);
@@ -220,13 +195,11 @@
 .inv-table tbody tr.row-low td { background:#fffaf9; }
 .inv-table tbody tr.row-low:hover td { background:#fdf3f2; }
 
-/* item cell */
 .inv-item-cell  { display:flex; align-items:center; gap:7px; }
 .inv-item-name  { font-weight:600; color:var(--c-text); line-height:1.3; }
 .inv-item-sub   { font-size:0.71rem; color:var(--c-text-muted); font-style:italic; margin-top:1px; }
 .inv-low-dot    { width:6px; height:6px; border-radius:50%; background:var(--c-red); flex-shrink:0; }
 
-/* category tag — neutral, no colors */
 .inv-cat-tag {
   display:inline-flex; align-items:center;
   padding:2px 8px; border-radius:5px;
@@ -235,7 +208,6 @@
   white-space:nowrap;
 }
 
-/* stock controls */
 .inv-stk-wrap  { display:flex; flex-direction:column; gap:3px; }
 .inv-stk-ctrl  { display:flex; align-items:center; gap:5px; }
 .inv-stk-num   { font-weight:700; font-size:0.86rem; min-width:30px; text-align:center; }
@@ -256,7 +228,6 @@
 .inv-mini-fill  { height:100%; border-radius:2px; transition:width 0.3s; }
 .inv-mini-lbl   { font-size:0.63rem; color:var(--c-text-muted); }
 
-/* badge */
 .inv-badge {
   display:inline-flex; align-items:center;
   padding:3px 8px; border-radius:5px;
@@ -266,7 +237,6 @@
 .badge-ok  { background:var(--c-green-soft); color:var(--c-green); }
 .badge-low { background:var(--c-red-soft);   color:var(--c-red); }
 
-/* actions */
 .inv-actions { display:flex; align-items:center; gap:4px; justify-content:flex-end; }
 .inv-icon-btn {
   display:flex; align-items:center; justify-content:center;
@@ -277,11 +247,9 @@
 .inv-icon-btn:hover     { background:#f4f7f5; color:var(--c-text); border-color:var(--c-border); }
 .inv-icon-btn.del:hover { background:var(--c-red-soft); color:var(--c-red); border-color:#fca5a5; }
 
-/* misc */
 .td-muted { color:var(--c-text-muted); font-size:0.78rem; }
 .td-bold  { font-weight:700; }
 
-/* loading / empty */
 .inv-loading {
   display:flex; align-items:center; justify-content:center;
   gap:0.6rem; padding:3.5rem; color:var(--c-text-muted); font-size:0.84rem;
@@ -300,9 +268,6 @@
 }
 .inv-empty-add:hover { background:var(--c-green-mid); }
 
-/* ══════════════════════════════════════════
-   MOBILE CARDS
-══════════════════════════════════════════ */
 .inv-mobile-cards { display:none; gap:0.65rem; flex-direction:column; margin-top:0.75rem; }
 .inv-mcard {
   background:var(--c-white); border:1px solid var(--c-border);
@@ -325,9 +290,6 @@
   padding-top:0.5rem; border-top:1px solid #f0f4f2;
 }
 
-/* ══════════════════════════════════════════
-   MODALS
-══════════════════════════════════════════ */
 .inv-overlay {
   position:fixed; inset:0;
   background:rgba(8,22,14,0.48);
@@ -405,7 +367,6 @@
 }
 .inv-back-btn:hover { color:var(--c-green); }
 
-/* confirm delete */
 .inv-confirm-body {
   padding:1.5rem; display:flex; flex-direction:column;
   align-items:center; gap:0.9rem; text-align:center;
@@ -425,7 +386,6 @@
 }
 .inv-btn-danger:hover { background:#991b1b; }
 
-/* category picker */
 .inv-picker-list { display:flex; flex-direction:column; padding:0.4rem 0; }
 .inv-picker-row {
   display:flex; align-items:center; gap:12px;
@@ -443,7 +403,6 @@
 .inv-picker-desc { font-size:0.73rem; color:var(--c-text-muted); }
 .inv-picker-arr  { margin-left:auto; color:#b8ccc5; font-size:1rem; flex-shrink:0; }
 
-/* shared buttons */
 .btn-primary {
   display:inline-flex; align-items:center; gap:6px;
   padding:0.58rem 1.1rem; background:var(--c-green); color:white;
@@ -461,7 +420,6 @@
 }
 .btn-secondary:hover { background:#f5f7f6; border-color:var(--c-border-med); }
 
-/* toast */
 .inv-toast {
   position:fixed; bottom:1.5rem; right:1.5rem; color:white;
   padding:0.6rem 1rem; border-radius:var(--r); font-size:0.81rem;
@@ -475,16 +433,11 @@
   to   { opacity:1; transform:translateY(0); }
 }
 
-/* plants tab: table card needs top border + margin */
 .inv-table-card { margin-top:0.75rem; border-radius:var(--rl); border:1px solid var(--c-border); }
-/* when sub-tabs show, flush bottom border of tabs into table top */
 .inv-sub-tabs + .inv-table-card {
   margin-top:0; border-top:none; border-radius:0 0 var(--rl) var(--rl);
 }
 
-/* ══════════════════════════════════════════
-   RESPONSIVE
-══════════════════════════════════════════ */
 @media (max-width:1100px) {
   .inv-stats-row { grid-template-columns:repeat(2,1fr); }
 }
@@ -498,7 +451,6 @@
   .inv-main-tab { padding:0.55rem 1rem 0.55rem 0.85rem; font-size:0.82rem; }
 }
 
-/* Mobile: hide table, show cards */
 @media (max-width:640px) {
   .inv-table-card   { display:none; }
   .inv-mobile-cards { display:flex; }

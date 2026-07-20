@@ -8,9 +8,6 @@ import {
 import { supabase } from '../supabase';
 import '../styles/Finance.css';
 
-// Same classification used on the project-level ledger (TabFinance) —
-// keeping these identical everywhere is what lets the Dashboard reliably
-// sum things like "Labour Charges" by exact category match.
 const CREDIT_CATS = ['Client Payments', 'Advance Received', 'Extra Work Charges'];
 const DEBIT_CATS  = ['Labour Charges', 'Site Expense', 'Material Purchase', 'Transport', 'Vendor Payment', 'Printing', 'Miscellaneous'];
 const PAY_METHODS = ['UPI', 'NEFT', 'Bank Transfer', 'Cheque', 'Cash'];
@@ -22,7 +19,7 @@ export default function Finance() {
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState('All');
   const [showAddTxModal, setShowAddTxModal] = useState(false);
-  const [deletingId, setDeletingId] = useState(null);   // tx to confirm-delete
+  const [deletingId, setDeletingId] = useState(null);  
   const [deleteLoading, setDeleteLoading] = useState(false);
 
   const [form, setForm] = useState({
@@ -62,7 +59,6 @@ export default function Finance() {
     }
   };
 
-  /* ── Parse description ── */
   const parseDescription = (desc) => {
     if (!desc) return { method: 'N/A', ref: 'N/A', note: '' };
     if (desc.includes(' | ')) {
@@ -78,7 +74,6 @@ export default function Finance() {
     return { method: 'General', ref: 'N/A', note: desc };
   };
 
-  /* ── Type change resets category to a valid option for that type ── */
   const handleTypeChange = (type) => {
     setForm(prev => ({
       ...prev,
@@ -87,7 +82,6 @@ export default function Finance() {
     }));
   };
 
-  /* ── Add transaction ── */
   const handleAddTx = async (e) => {
     e.preventDefault();
     try {
@@ -117,7 +111,6 @@ export default function Finance() {
     }
   };
 
-  /* ── Delete transaction ── */
   const handleDeleteConfirm = async () => {
     if (!deletingId) return;
     setDeleteLoading(true);
@@ -138,12 +131,10 @@ export default function Finance() {
     }
   };
 
-  /* ── Totals ── */
   const totalIncome  = transactions.filter(t => t.type === 'Credit').reduce((s, t) => s + Number(t.amount), 0);
   const totalExpense = transactions.filter(t => t.type === 'Debit').reduce((s, t) => s + Number(t.amount), 0);
   const netBalance   = totalIncome - totalExpense;
 
-  /* ── Filter ── */
   const filtered = transactions.filter(t => {
     const parsed      = parseDescription(t.description);
     const projectName = t.projects?.name || 'General Overheads';
@@ -160,10 +151,8 @@ export default function Finance() {
     return matchSearch && matchType;
   });
 
-  /* ── Helper: short tx id ── */
   const shortId = (id) => `TX-${id.substring(0, 8).toUpperCase()}`;
 
-  /* ── Tx being deleted (for modal text) ── */
   const deletingTx = transactions.find(t => t.id === deletingId);
 
   return (
@@ -353,9 +342,6 @@ export default function Finance() {
         </main>
       </div>
 
-      {/* ════════════════════════════════════════
-          Delete Confirm Modal
-      ════════════════════════════════════════ */}
       {deletingId && (
         <div className="modal-overlay" onClick={() => !deleteLoading && setDeletingId(null)}>
           <div className="confirm-modal" onClick={(e) => e.stopPropagation()}>
@@ -392,9 +378,6 @@ export default function Finance() {
         </div>
       )}
 
-      {/* ════════════════════════════════════════
-          Record Transaction Modal
-      ════════════════════════════════════════ */}
       {showAddTxModal && (
         <div className="modal-overlay">
           <div className="modal-content animate-fade">
@@ -440,9 +423,6 @@ export default function Finance() {
                     />
                   </div>
 
-                  {/* Category — a real classification dropdown, not free text,
-                      so entries like "Labour Charges" match consistently
-                      everywhere (including the Dashboard KPIs). */}
                   <div className="form-group">
                     <label>Category</label>
                     <select

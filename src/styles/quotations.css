@@ -1,21 +1,13 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Lora:wght@600;700;800&display=swap');
 
-/* ═══════════════════════════════════════════════════════════════
-   QUOTATIONS PAGE  —  GreenDesk / GreenSpire
-   Mirrors projects.css design tokens; amber-gold accent for quotes
-═══════════════════════════════════════════════════════════════ */
-
-/* ── Layout ── */
 .qt-layout        { display: flex; min-height: 100vh; background: #f8fafc; }
 .qt-right         { flex: 1; display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
 .qt-main          { flex: 1; padding: 1.5rem 1.75rem; overflow-y: auto; }
 
-/* ── Page header ── */
 .qt-page-head     { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
 .qt-page-title    { font-size: 1.45rem; font-weight: 700; color: #0b3d27; margin: 0 0 0.2rem; }
 .qt-page-sub      { font-size: 0.82rem; color: #64748b; margin: 0; }
 
-/* ── Add button ── */
 .qt-add-btn {
   display: inline-flex; align-items: center; gap: 0.45rem;
   padding: 0.55rem 1.1rem; background: linear-gradient(135deg,#f59e0b,#d97706);
@@ -25,7 +17,6 @@
 }
 .qt-add-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(245,158,11,.4); }
 
-/* ── Metrics row ── */
 .qt-metrics { display: grid; grid-template-columns: repeat(auto-fit,minmax(140px,1fr)); gap: .85rem; margin-bottom: 1.5rem; }
 .qt-metric  {
   display: flex; align-items: center; gap: .75rem;
@@ -37,7 +28,6 @@
 .qt-metric-val  { font-size: 1.3rem; font-weight: 700; color: #0b3d27; line-height: 1.1; }
 .qt-metric-lbl  { font-size: 0.72rem; color: #94a3b8; font-weight: 500; margin-top: 2px; }
 
-/* ── Toolbar ── */
 .qt-toolbar     { display: flex; align-items: center; gap: .75rem; margin-bottom: 1.25rem; flex-wrap: wrap; }
 .qt-search-wrap { position: relative; flex: 1; min-width: 200px; max-width: 340px; }
 .qt-search-icon { position: absolute; left: .8rem; top: 50%; transform: translateY(-50%); color: #94a3b8; pointer-events: none; }
@@ -74,7 +64,6 @@
 }
 .qt-card:hover { box-shadow: 0 6px 20px rgba(0,0,0,.1); transform: translateY(-2px); border-color: #fcd34d; }
 
-/* Card header */
 .qt-card-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: .75rem; }
 .qt-card-num  { font-size: .73rem; font-weight: 700; color: #f59e0b; letter-spacing: .04em; text-transform: uppercase; }
 
@@ -89,7 +78,6 @@
 .qt-card-action-btn.approve-btn:hover { background: #10b981; color: #fff; border-color: #10b981; }
 .qt-card-action-btn.delete-btn:hover { background: #fef2f2; color: #ef4444; border-color: #fecaca; }
 
-/* Share dropdown */
 .qt-share-wrap { position: relative; }
 .qt-share-dropdown {
   position: absolute; top: calc(100% + 6px); right: 0; z-index: 200;
@@ -107,24 +95,20 @@
 .qt-share-option.pdf-opt  { color: #dc2626; }
 .qt-share-option.wa-opt   { color: #16a34a; }
 
-/* Name + client */
 .qt-card-name-wrap { margin-bottom: .75rem; }
 .qt-card-name      { font-size: 1rem; font-weight: 700; color: #0b3d27; margin: 0 0 .15rem; line-height: 1.3; }
 .qt-card-client    { font-size: .8rem; color: #64748b; margin: 0; }
 
-/* Stats grid */
 .qt-card-stats { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem .75rem; margin-bottom: .85rem; }
 .qt-stat        { display: flex; flex-direction: column; gap: 1px; }
 .qt-stat-lbl   { font-size: .69rem; color: #94a3b8; font-weight: 500; text-transform: uppercase; letter-spacing: .03em; }
 .qt-stat-val   { font-size: .83rem; font-weight: 600; color: #1e293b; }
 
-/* Footer */
 .qt-card-footer    { display: flex; align-items: center; justify-content: space-between; margin-top: .7rem; padding-top: .7rem; border-top: 1px solid #f1f5f9; }
 .qt-card-address   { display: flex; align-items: center; gap: 4px; font-size: .73rem; color: #94a3b8; max-width: 60%; }
 .qt-card-address span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .qt-card-status    { font-size: .72rem; font-weight: 600; padding: .22rem .65rem; border-radius: 20px; }
 
-/* ── Locate / area calc button ── */
 .qt-locate-btn {
   padding: .52rem .75rem; border: 1px solid #e2e8f0; border-radius: 9px;
   background: #f8fafc; color: #64748b; cursor: pointer; transition: all .15s;
@@ -132,25 +116,22 @@
 }
 .qt-locate-btn:hover { background: #f1f5f9; color: #0b3d27; border-color: #cbd5e1; }
 
-/* ── Modal ── */
-/* Overlay: full-screen, always centers the modal with space on all sides */
 .qt-modal-overlay {
   position: fixed; inset: 0;
   background: rgba(11,28,20,.50);
   backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px);
   z-index: 1000;
   display: flex; align-items: center; justify-content: center;
-  padding: 1rem;           /* guarantees gap from every viewport edge */
+  padding: 1rem;           
 }
 
-/* Modal box — never taller than viewport, body scrolls inside */
 .qt-modal {
   background: #fff;
   border-radius: 16px;
   width: 100%; max-width: 680px;
   height: auto; max-height: calc(100dvh - 2rem);
   display: flex; flex-direction: column;
-  overflow: hidden;        /* children must not bleed out */
+  overflow: hidden;        
   box-shadow:
     0 2px 8px  rgba(0,0,0,.06),
     0 16px 40px rgba(0,0,0,.16),
@@ -173,49 +154,41 @@
 }
 .qt-modal-close:hover { background: #fef2f2; border-color: #fca5a5; color: #ef4444; }
 
-/* Body — only vertical scroll, horizontal is clamped */
 .qt-modal-body {
-  flex: 1; min-height: 0;          /* critical for flex scroll */
+  flex: 1; min-height: 0;         
   overflow-y: auto; overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
   padding: 1.25rem 1.5rem;
 }
 
-/* Footer — fixed at bottom, never scrolls */
 .qt-modal-foot {
   padding: 1rem 1.5rem; border-top: 1px solid #f1f5f9;
   display: flex; align-items: center; justify-content: flex-end; gap: .75rem;
   flex-shrink: 0; background: #fff;
 }
 
-/* Form grid inside modal */
 .qt-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .85rem 1rem; }
 .qt-full      { grid-column: 1 / -1; }
 
-/* GST auto-calc display */
 .qt-gst-row   { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: .85rem 1rem; }
 .qt-gst-readonly {
   padding: .55rem .85rem; border: 1px solid #e2e8f0; border-radius: 9px;
   background: #f8fafc; font-size: .85rem; color: #64748b; font-weight: 600;
 }
 
-/* ── Wide modal for product line items ── */
 .qt-modal.qt-modal-wide { max-width: 960px; }
 
-/* ── Area-calc modal floats above the main modal ── */
 .qt-modal-overlay.qt-calc-overlay {
   background: rgba(0,0,0,.2);
   z-index: 1100;
 }
 
-/* ── Section divider inside modal ── */
 .qt-section-label {
   font-size: .72rem; font-weight: 700; color: #94a3b8; text-transform: uppercase;
   letter-spacing: .07em; margin: 1.25rem 0 .6rem; padding-bottom: .35rem;
   border-bottom: 1px solid #f1f5f9; grid-column: 1 / -1;
 }
 
-/* ── Product line-items table ── */
 .qt-items-wrap { grid-column: 1 / -1; }
 .qt-items-table {
   width: 100%; border-collapse: collapse; font-size: .8rem;
@@ -230,7 +203,6 @@
 .qt-items-table tr:last-child td { border-bottom: none; }
 .qt-items-table tr:hover td { background: #fafafa; }
 
-/* compact inputs inside table */
 .qt-item-input {
   width: 100%; padding: .35rem .5rem; border: 1px solid #e2e8f0; border-radius: 7px;
   font-size: .8rem; color: #1e293b; background: #fff; outline: none; box-sizing: border-box;
@@ -269,7 +241,6 @@
 /* row amount (read-only) */
 .qt-row-amount { font-weight: 600; color: #0b3d27; white-space: nowrap; }
 
-/* remove row btn */
 .qt-remove-row {
   width: 24px; height: 24px; border: 1px solid #fecaca; border-radius: 6px;
   background: #fef2f2; cursor: pointer; color: #ef4444; display: flex;
@@ -277,7 +248,6 @@
 }
 .qt-remove-row:hover { background: #ef4444; color: #fff; border-color: #ef4444; }
 
-/* add row button */
 .qt-add-row-btn {
   display: inline-flex; align-items: center; gap: .4rem; margin-top: .65rem;
   padding: .38rem .8rem; border: 1.5px dashed #fcd34d; border-radius: 8px;
@@ -286,7 +256,6 @@
 }
 .qt-add-row-btn:hover { border-color: #f59e0b; background: #fef3c7; }
 
-/* ── Summary box ── */
 .qt-summary-box {
   grid-column: 1 / -1; margin-top: .75rem;
   background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px;
@@ -307,7 +276,6 @@
 .qt-summary-total .qt-summary-label { color: #86efac; font-weight: 600; font-size: .88rem; }
 .qt-summary-total .qt-summary-val   { color: #fcd34d; font-size: 1rem; font-weight: 800; }
 
-/* Approve confirm modal */
 .qt-approve-modal {
   background: #fff; border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,.2);
   width: 100%; max-width: 400px; padding: 1.75rem;
@@ -318,7 +286,6 @@
 .qt-approve-sub   { font-size: .83rem; color: #64748b; text-align: center; margin: 0 0 1.5rem; line-height: 1.5; }
 .qt-approve-btns  { display: flex; gap: .75rem; }
 
-/* ── Shared button styles (mirror projects) ── */
 .btn-primary {
   padding: .55rem 1.2rem; background: linear-gradient(135deg,#10b981,#059669);
   color: #fff; border: none; border-radius: 9px; font-size: .85rem; font-weight: 600;
@@ -338,28 +305,17 @@
 }
 .btn-approve:hover { box-shadow: 0 4px 14px rgba(16,185,129,.35); }
 
-/* ── Spin animation ── */
 @keyframes db-spin { to { transform: rotate(360deg); } }
 .db-spin { animation: db-spin 1s linear infinite; }
 
-/* ── Fade in ── */
 .animate-fade { animation: qtFade .3s ease; }
 @keyframes qtFade { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 
-
-/* ══════════════════════════════════════════════════════════════════
-   QUOTATION DOCUMENT TEMPLATE — Print & PDF Export
-   A4: 210mm × 297mm. Increased font sizes for readable PDF output.
-   Header + Footer repeat on every page via explicit page divs.
-══════════════════════════════════════════════════════════════════ */
-
-/* ── Page setup for browser print ── */
 @page {
   size: A4 portrait;
   margin: 0;
 }
 
-/* Force background colours and images to print */
 .qt-print-doc,
 .qt-print-doc * {
   -webkit-print-color-adjust: exact !important;
@@ -367,18 +323,15 @@
   color-adjust: exact !important;
 }
 
-/* ── Multi-page wrapper ── */
 .qt-print-wrapper {
   background: #fff;
 }
 
-/* Each .qt-print-doc is one explicit A4 page. */
 .qtp-page-break {
   page-break-after: always;
   break-after: page;
 }
 
-/* Continuation label on page 2+ */
 .qtp-continuation-label {
   font-size: 10pt; font-weight: 800; color: #111111;
   text-transform: uppercase; letter-spacing: .08em;
@@ -390,10 +343,8 @@
   text-transform: none; letter-spacing: 0;
 }
 
-/* Extra top padding on continuation financials block */
 .qtp-financials-cont { padding-top: 10px; }
 
-/* The outer doc wrapper — strict A4 height so pages never overflow */
 .qt-print-doc {
   font-family: 'Inter', Arial, sans-serif;
   color: #1f2937;
@@ -406,7 +357,7 @@
   padding: 0;
   background: #fff;
   box-sizing: border-box;
-  position: relative;      /* anchor for absolute footer */
+  position: relative;     
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -422,9 +373,6 @@
   }
 }
 
-/* ══════════════════════════════
-   HEADER — fixed chrome on every page
-══════════════════════════════ */
 .qtp-header {
   padding: 18px 24px 16px;
   display: flex;
@@ -468,9 +416,6 @@
 .qtp-meta-val { font-size: 10.5pt; color: #111111; padding: 3px 0; text-align: right; }
 .qtp-meta-val strong { color: #111111; font-weight: 700; }
 
-/* ══════════════════════════════
-   BILLED TO + PROJECT INFO BAND
-══════════════════════════════ */
 .qtp-info-band {
   display: grid; grid-template-columns: 1fr 1fr;
   border-bottom: 1.5px solid #e2e8f0;
@@ -492,7 +437,6 @@
 .qtp-proj-key { font-size: 10pt; font-weight: 500; color: #374151; width: 115px; flex-shrink: 0; }
 .qtp-proj-val { font-size: 11pt; color: #111111; font-weight: 600; }
 
-/* ── Section head ── */
 .qtp-section-head {
   font-size: 10pt; font-weight: 800; color: #111111;
   text-transform: uppercase; letter-spacing: .08em;
@@ -500,13 +444,9 @@
   display: block; margin-bottom: 12px;
 }
 
-/* ── Scope of work ── */
 .qtp-scope { padding: 14px 24px; border-bottom: 1.5px solid #e2e8f0; }
 .qtp-scope-text { font-size: 11.5pt; color: #111111; line-height: 1.75; white-space: pre-wrap; }
 
-/* ══════════════════════════════
-   ITEMISED TABLE
-══════════════════════════════ */
 .qtp-financials { padding: 14px 24px 0; flex-shrink: 0; overflow: hidden; }
 .qtp-items-print-table {
   width: 100%; border-collapse: collapse; font-size: 11pt;   /* ↑ increased from 10pt */
@@ -548,10 +488,6 @@
 
 .item-desc { font-size: 10pt; font-weight: 500; color: #374151; line-height: 1.45; }
 
-/* ══════════════════════════════
-   TOTALS BAND — sits directly below the last item row
-   Connects to the table visually with a top border
-══════════════════════════════ */
 .qtp-totals-band {
   margin: 0 24px;
   padding: 0;
@@ -563,7 +499,6 @@
   page-break-inside: avoid;
 }
 
-/* Left side — amount in words */
 .qtp-amount-words {
   flex: 1;
   background: #f8fafc;
@@ -576,7 +511,6 @@
 .qtp-words-label { font-size: 9pt; font-weight: 700; color: #374151; display: block; margin-bottom: 5px; text-transform: uppercase; letter-spacing: .05em; }
 .qtp-words-text { font-size: 11pt; color: #111111; font-weight: 600; font-style: italic; line-height: 1.5; }
 
-/* Right side — financial summary table */
 .qtp-fin-table { border-collapse: collapse; min-width: 220px; width: 240px; flex-shrink: 0; }
 .qtp-fin-table td { padding: 7px 12px; font-size: 10.5pt; }
 .qtp-fin-table tr:not(:last-child) td { border-bottom: 1px solid #f1f5f9; }
@@ -586,7 +520,6 @@
 .qtp-fin-total .fin-label { color: #111111 !important; }
 .qtp-fin-total .fin-value { color: #111111 !important; }
 
-/* ── Compact Totals Table (Two-Column PDF Summary Layout) ── */
 .qtp-totals-table {
   width: 100%;
   border-collapse: collapse;
@@ -627,32 +560,21 @@
   color: #fff !important;
 }
 
-/* ── Notes ── */
 .qtp-notes-block { padding: 10px 24px 14px; page-break-inside: avoid; }
 .qtp-notes-list { margin: 6px 0 0; padding-left: 18px; }
 .qtp-notes-list li { font-size: 11pt; font-weight: 500; color: #111111; line-height: 1.65; margin-bottom: 3px; }
 
-/* ── Amount in Words (in summary row) ── */
 .qtp-totals-words {
   font-size: 10.5pt; font-weight: 500; color: #111111;
   font-style: italic; line-height: 1.55;
-  padding-top: 8px;  /* small gap above — not on the grand total box itself */
+  padding-top: 8px;  
 }
 .qtp-totals-words strong { font-weight: 700; font-style: normal; }
 
-/* ── Left panel of summary row (amount words + terms) ── */
 .qtp-summary-left-terms { margin-top: 10px; display: flex; flex-direction: column; gap: 10px; }
 
-/* ══════════════════════════════
-   FOOTER SPACER — flexible space that pushes only the
-   page footer to the bottom of the page. Everything above it
-   (totals, notes) flows normally right after the items table.
-   The bottom-grid (payment terms + signature + T&C) is pinned
-   just above the footer.
-══════════════════════════════ */
 .qtp-footer-spacer { flex: 1 1 0px; min-height: 8px; max-height: 60px; }
 
-/* ── Unified Side-by-Side Summary Row (Compact PDF Layout) ── */
 .qtp-summary-row {
   display: flex;
   align-items: stretch;
@@ -678,13 +600,12 @@
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: 0 0 0 20px;       /* flush with table right edge (table container ends at page edge) */
+  padding: 0 0 0 20px;      
 }
 
-/* ── Payment Terms + T&C (left) + Signature (right) ── */
 .qtp-bottom-grid {
   display: grid; grid-template-columns: 1.6fr 1fr;
-  margin-top: auto;        /* pushes to bottom of page-body */
+  margin-top: auto;       
   page-break-inside: avoid;
   flex-shrink: 0;
 }
@@ -717,7 +638,6 @@
   display: flex; align-items: flex-start; gap: 6px;
 }
 
-/* ── Bank Details rows (Invoice PDF only) ── */
 .qtp-bank-row {
   display: flex; align-items: flex-start; gap: 9px;
   font-size: 10pt; font-weight: 500; color: #111111; line-height: 1.55;
@@ -737,11 +657,8 @@
 }
 
 
-
-
-/* Right column: Signature block */
 .qtp-sig-block {
-  padding: 14px 20px 0;      /* no gap below sig block */
+  padding: 14px 20px 0;     
   display: flex; flex-direction: column;
   justify-content: flex-end;
   align-items: center;
@@ -755,12 +672,11 @@
   font-size: 11pt; font-weight: 800; color: #5c3a21;
   font-family: 'Lora', Georgia, serif; letter-spacing: .01em;
   line-height: 1.3; margin-top: 5px;
-  padding-left: 24px;   /* ← shifts text slightly to the right */
+  padding-left: 24px;  
 }
 .qtp-sig-contact {
   display: none;
 }
-/* Signature space — room for physical stamp / wet signature */
 .qtp-sig-space { flex: 1; min-height: 36px; width: 100%; }
 .qtp-sig-bottom {
   display: flex; flex-direction: column; gap: 0; width: 100%;
@@ -781,9 +697,6 @@
   text-transform: uppercase; letter-spacing: .08em;
 }
 
-/* ══════════════════════════════
-   PAGE FOOTER — absolutely pinned to bottom of every page
-══════════════════════════════ */
 .qtp-page-footer {
   position: absolute;
   bottom: 0; left: 0; right: 0;
@@ -811,16 +724,14 @@
 }
 .qtp-footer-sep { color: #94a3b8; font-size: 10pt; line-height: 1; }
 
-/* Inner content area — padded so nothing slides under the absolute footer */
 .qtp-page-body {
   flex: 1;
   display: flex;
   flex-direction: column;
-  padding-bottom: 56px;   /* matches footer height so content never overlaps */
+  padding-bottom: 56px;  
   overflow: hidden;
 }
 
-/* ── Compact grand-total strip — shown on continuation pages ── */
 .qtp-page-total-strip {
   display: flex; justify-content: flex-end; align-items: center;
   gap: 16px; padding: 8px 24px 10px;
@@ -837,7 +748,6 @@
   white-space: nowrap;
 }
 
-/* ── Validity strip (shown above footer on last page) ── */
 .qtp-validity-strip {
   text-align: center; padding: 6px 24px;
   font-size: 9.5pt; font-weight: 500; color: #111111;
@@ -847,9 +757,6 @@
 }
 .qtp-validity-strip strong { color: #111111; font-weight: 700; }
 
-/* ──────────────────────────────────────────────────
-   PRINT vs ON-SCREEN visibility
-──────────────────────────────────────────────────── */
 #qt-print-root { display: none; }
 @media print {
   body > *:not(#qt-print-root) { display: none !important; }
@@ -860,29 +767,21 @@
   .qtp-page-footer { position: absolute; bottom: 0; left: 0; right: 0; }
 }
 
-/* Off-screen export root for html2pdf */
 #qt-pdf-export-root {
-  position: fixed; top: 0; left: -10000px; z-index: -1;
+  position: fixed; top: 0; left: 0; z-index: -1;
+  opacity: 0; pointer-events: none;
 }
 
-/* ══════════════════════════════════════════════════════════════════
-   RESPONSIVE — Tablet (≤ 900px) + Mobile (≤ 600px)
-   Modal is ALWAYS centered with space on every side (like Projects).
-   ONLY .qt-items-wrap scrolls horizontally — nothing else bleeds.
-══════════════════════════════════════════════════════════════════ */
 
-/* ── Desktop: items-wrap does NOT scroll — table fills naturally ── */
 .qt-items-wrap {
-  overflow-x: visible;   /* no scroll on desktop */
+  overflow-x: visible; 
 }
 .qt-items-table {
-  width: 100%;           /* fills the wrapper on desktop */
+  width: 100%;         
   min-width: unset;
 }
 
-/* ── Tablet (601px – 900px) ─────────────────────────────────── */
 @media (max-width: 900px) {
-  /* Modal: stays centered, fills most viewport, space on sides */
   .qt-modal,
   .qt-modal.qt-modal-wide {
     max-width: calc(100vw - 2rem);
@@ -890,25 +789,19 @@
     max-height: calc(100dvh - 2rem);
   }
 
-  /* Form grid stays 2-col but tighter gap */
   .qt-form-grid { gap: .7rem .75rem; }
 
-  /* Metrics: 3 across on tablet */
   .qt-metrics { grid-template-columns: repeat(3, 1fr); }
 
-  /* Cards: 2 columns */
   .qt-grid { grid-template-columns: repeat(2, 1fr); }
 
-  /* Modal chrome tighter */
   .qt-modal-head { padding: 1rem 1.25rem; }
   .qt-modal-body { padding: 1rem 1.25rem; }
   .qt-modal-foot { padding: .85rem 1.25rem; }
 
-  /* Items table cells slightly tighter */
   .qt-items-table th,
   .qt-items-table td { padding: .42rem .5rem; }
 
-  /* Enable horizontal scroll on items section only */
   .qt-items-wrap {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
@@ -922,38 +815,31 @@
   .qt-items-table { min-width: 640px; width: max-content; }
 }
 
-/* ── Mobile (≤ 600px) ───────────────────────────────────────── */
 @media (max-width: 600px) {
-  /* ─ Page layout ─ */
   .qt-main { padding: .85rem .9rem; }
 
-  /* ─ Page header ─ */
   .qt-page-head { flex-direction: column; align-items: flex-start; gap: .6rem; }
   .qt-page-title { font-size: 1.2rem; }
   .qt-add-btn { width: 100%; justify-content: center; }
 
-  /* ─ Metrics: 2 × 2 (5th wraps to new row) ─ */
   .qt-metrics { grid-template-columns: repeat(2, 1fr); gap: .6rem; }
   .qt-metric  { padding: .7rem .85rem; gap: .6rem; }
   .qt-metric-val { font-size: 1.1rem; }
 
-  /* ─ Toolbar ─ */
   .qt-toolbar { flex-direction: column; align-items: stretch; gap: .6rem; }
   .qt-search-wrap { max-width: 100%; }
   .qt-filters { justify-content: flex-start; }
   .qt-filter-btn { font-size: .75rem; padding: .33rem .7rem; }
 
-  /* ─ Cards: single column ─ */
   .qt-grid { grid-template-columns: 1fr; }
 
-  /* ─ Modal: centered with padding on all sides (matches Projects exactly) ─ */
   .qt-modal-overlay { padding: .75rem; align-items: center; }
   .qt-modal,
   .qt-modal.qt-modal-wide {
     max-width: 100%;
     width: 100%;
     max-height: calc(100dvh - 1.5rem);
-    border-radius: 14px;    /* stays rounded on all 4 corners */
+    border-radius: 14px;   
   }
   .qt-modal-head { padding: 1rem 1.1rem; }
   .qt-modal-body { padding: 1rem 1.1rem; }
@@ -966,42 +852,33 @@
   .qt-modal-foot .btn-secondary,
   .qt-modal-foot .btn-primary { width: 100%; justify-content: center; }
 
-  /* ─ Form grid: single column ─ */
   .qt-form-grid { grid-template-columns: 1fr; gap: .65rem; }
   .qt-full { grid-column: 1; }
   .qt-gst-row { grid-template-columns: 1fr; gap: .65rem; }
   .qt-form-grid .form-group { grid-column: 1; }
 
-  /* ─ Section labels ─ */
   .qt-section-label { margin: 1rem 0 .4rem; }
 
-  /* ─ Items table cells: tighter ─ */
   .qt-items-table th,
   .qt-items-table td { padding: .38rem .42rem; }
 
-  /* Mobile scroll (already inherited from tablet block, re-stated for clarity) */
   .qt-items-wrap {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
   }
   .qt-items-table { min-width: 580px; width: max-content; }
 
-  /* Add-row button: full width */
   .qt-add-row-btn { width: 100%; justify-content: center; box-sizing: border-box; }
 
-  /* ─ Summary box ─ */
   .qt-summary-box { margin-top: .6rem; }
 
-  /* ─ Locate / calculator icon buttons: never shrink ─ */
   .qt-locate-btn { flex-shrink: 0; }
 
-  /* ─ Approve modal ─ */
   .qt-approve-modal { border-radius: 14px; padding: 1.25rem 1rem; }
   .qt-approve-btns  { flex-direction: column; }
   .qt-approve-btns .btn-secondary,
   .qt-approve-btns .btn-approve { width: 100%; text-align: center; }
 
-  /* ─ Share dropdown: re-centre so it never clips the right edge ─ */
   .qt-share-dropdown { right: auto; left: 50%; transform: translateX(-50%); }
 }
 
