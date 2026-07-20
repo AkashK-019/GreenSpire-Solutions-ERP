@@ -31,11 +31,6 @@ export default function Dashboard() {
 
   useEffect(() => { fetchDashboardData(); }, []);
 
-  // Build a local YYYY-MM-DD string without going through toISOString(),
-  // which converts to UTC and can silently roll the date back a day
-  // (e.g. in IST, midnight local on the 1st becomes 18:30 the previous
-  // day in UTC). That off-by-one was corrupting the month boundaries
-  // used below, which is why "previous month" was pulling in extra data.
   const toDateStr = (d) => {
     const y = d.getFullYear();
     const m = String(d.getMonth() + 1).padStart(2, '0');
