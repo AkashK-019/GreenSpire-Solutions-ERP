@@ -128,7 +128,7 @@ function buildLedger(member, attArr, payArr) {
     running = running + earned - paid;
     return { month: ym, earned, paid, outstandingAfter: running, status: running <= 0.5 ? 'Settled' : 'Due' };
   });
-  return ledger.reverse(); // most recent first
+  return ledger.reverse();
 }
 
 export default function Labour() {
@@ -140,27 +140,22 @@ export default function Labour() {
   const [error, setError] = useState('');
   const [todayAttendance, setTodayAttendance] = useState({}); // { memberId: status } for TODAY
 
-  /* ── List filters ── */
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('All');
   const [payTypeFilter, setPayTypeFilter] = useState('All');
 
-  /* ── Selection & detail ── */
   const [selectedId, setSelectedId] = useState(null);
   const [rightTab, setRightTab] = useState('profile');
   const [allAttendance, setAllAttendance] = useState([]);
   const [allPayments, setAllPayments] = useState([]);
   const [detailLoading, setDetailLoading] = useState(false);
 
-  /* ── Attendance tab ── */
   const [selectedDate, setSelectedDate] = useState(TODAY);
   const [calendarMonth, setCalendarMonth] = useState(TODAY_YM);
 
-  /* ── Payments tab ── */
   const [payForm, setPayForm] = useState({ amount: '', date: TODAY, mode: 'Cash', remarks: '' });
   const [payBusy, setPayBusy] = useState(false);
 
-  /* ── Add/Edit modal ── */
   const [showAddMember, setShowAddMember] = useState(false);
   const [editMember, setEditMember] = useState(null);
   const [form, setForm] = useState(emptyMember);
@@ -168,7 +163,6 @@ export default function Labour() {
 
   const selected = useMemo(() => members.find(m => m.id === selectedId) || null, [members, selectedId]);
 
-  /* ═══════════ FETCHERS ═══════════ */
   const fetchMembers = useCallback(async () => {
     setLoading(true);
     setError('');
