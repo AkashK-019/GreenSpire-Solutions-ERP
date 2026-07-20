@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../supabase';
 import { useCompanyConfig } from '../context/CompanySettingsContext';
+import { createInvoiceFromQuotation } from '../utils/invoiceHelpers';
 import html2pdf from 'html2pdf.js';
 import '../styles/quotations.css';
 
@@ -105,28 +106,6 @@ const genQuotationNumber = async (supabaseClient) => {
 
     if (data && data.length > 0) {
       const last = data[0].quotation_number; // e.g. "QT-2526-007"
-      const lastNum = parseInt(last.replace(prefix, ''), 10);
-      const next    = isNaN(lastNum) ? 1 : lastNum + 1;
-      return `${prefix}${String(next).padStart(3, '0')}`;
-    }
-  } catch {/* fallthrough */}
-  return `${prefix}001`;
-};
-
-/* ── Auto invoice number — sequential within the FY ─── */
-const genInvoiceNumber = async (supabaseClient) => {
-  const fy     = getCurrentFY();
-  const prefix = `INV-${fy}-`;
-  try {
-    const { data } = await supabaseClient
-      .from('quotations')
-      .select('invoice_number')
-      .like('invoice_number', `${prefix}%`)
-      .order('invoice_number', { ascending: false })
-      .limit(1);
-
-    if (data && data.length > 0) {
-      const last    = data[0].invoice_number;
       const lastNum = parseInt(last.replace(prefix, ''), 10);
       const next    = isNaN(lastNum) ? 1 : lastNum + 1;
       return `${prefix}${String(next).padStart(3, '0')}`;
@@ -394,14 +373,14 @@ export default function Quotations() {
         .single();
       if (projErr) throw projErr;
 
-      const invNum = q.quotation_number
-        ? q.quotation_number.replace(/^QT-/, 'INV-')
-        : `INV-${q.id}`;
       const { error: qErr } = await supabase
         .from('quotations')
-        .update({ status: 'Approved', converted_project_id: proj.id, project_id: proj.id, invoice_number: invNum })
+        .update({ status: 'Approved', converted_project_id: proj.id, project_id: proj.id })
         .eq('id', q.id);
       if (qErr) throw qErr;
+
+      // Independent invoice snapshot — editing it later never touches this quotation.
+      await createInvoiceFromQuotation({ ...q, project_id: proj.id }, proj.id, 'Full');
 
       setApproveTarget(null);
       setApproving(false);

@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../../supabase';
 import { useCompanyConfig } from '../../context/CompanySettingsContext';
+import { createInvoiceFromQuotation } from '../../utils/invoiceHelpers';
 import html2pdf from 'html2pdf.js';
 import '../../styles/quotations.css';
 
@@ -101,28 +102,6 @@ const genQuotationNumber = async (supabaseClient) => {
 
     if (data && data.length > 0) {
       const last = data[0].quotation_number; // e.g. "QT-2526-007"
-      const lastNum = parseInt(last.replace(prefix, ''), 10);
-      const next    = isNaN(lastNum) ? 1 : lastNum + 1;
-      return `${prefix}${String(next).padStart(3, '0')}`;
-    }
-  } catch {/* fallthrough */}
-  return `${prefix}001`;
-};
-
-/* ── Auto invoice number — sequential within the FY ─── */
-const genInvoiceNumber = async (supabaseClient) => {
-  const fy     = getCurrentFY();
-  const prefix = `INV-${fy}-`;
-  try {
-    const { data } = await supabaseClient
-      .from('quotations')
-      .select('invoice_number')
-      .like('invoice_number', `${prefix}%`)
-      .order('invoice_number', { ascending: false })
-      .limit(1);
-
-    if (data && data.length > 0) {
-      const last    = data[0].invoice_number;
       const lastNum = parseInt(last.replace(prefix, ''), 10);
       const next    = isNaN(lastNum) ? 1 : lastNum + 1;
       return `${prefix}${String(next).padStart(3, '0')}`;
@@ -443,22 +422,28 @@ export default function TabQuotations({ project }) {
 
   /* ── Update status in place (Pending / Approved / Rejected) ──
      Quotations here already belong to this project, so there's no
-     "convert to project" step — just flip the status. ── */
+     "convert to project" step — just flip the status.
+
+     When moving to Approved, we also create an independent invoice
+     snapshot in the `invoices` table (once). From that point on,
+     editing the invoice (in TabInvoices) never changes this quotation,
+     and editing this quotation never changes invoices already issued. ── */
   const updateStatus = async (id, status) => {
     try {
-      const updateData = { status };
+      const { error } = await supabase.from('quotations').update({ status }).eq('id', id);
+      if (error) throw error;
+      setQuotations(prev => prev.map(q => q.id === id ? { ...q, status } : q));
+
       if (status === 'Approved') {
-        const existing = quotations.find(q => q.id === id);
-        if (!existing?.invoice_number) {
-          const qNum = existing?.quotation_number || '';
-          updateData.invoice_number = qNum
-            ? qNum.replace(/^QT-/, 'INV-')
-            : `INV-${id}`;
+        const { count } = await supabase
+          .from('invoices')
+          .select('id', { count: 'exact', head: true })
+          .eq('quotation_id', id);
+        if (!count) {
+          const existing = quotations.find(q => q.id === id);
+          if (existing) await createInvoiceFromQuotation(existing, project.id, 'Full');
         }
       }
-      const { error } = await supabase.from('quotations').update(updateData).eq('id', id);
-      if (error) throw error;
-      setQuotations(prev => prev.map(q => q.id === id ? { ...q, ...updateData } : q));
     } catch (err) {
       alert('Failed to update status: ' + err.message);
     }
